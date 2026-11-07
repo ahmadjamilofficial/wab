@@ -32,6 +32,7 @@ const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 function replayIteratorStream<T>(
   first: IteratorResult<T>,
   iterator: AsyncIterator<T>,
+  onError?: (error: unknown) => void,
 ): ReadableStream<T> {
   let sentFirst = false;
   return new ReadableStream<T>({
@@ -50,7 +51,15 @@ function replayIteratorStream<T>(
         if (next.done) controller.close();
         else controller.enqueue(next.value);
       } catch (error) {
-        controller.error(error);
+        // Close the stream cleanly instead of erroring it. If we call
+        // controller.error() the writer's output stream dies immediately,
+        // so the onError handler can no longer deliver a useful message to
+        // the client (they get the generic "An error occurred."). Closing
+        // cleanly keeps the writer writable while execute() detects the
+        // failure via result.response (or the captured error) and triggers
+        // onError with a real, human-readable message.
+        onError?.(error);
+        controller.close();
       }
     },
   });
