@@ -1534,7 +1534,10 @@ NEW TOOLS ADDED:
             // AI SDK 7 ignores maxSteps; without stopWhen the loop ends after the
             // first tool call and the user never gets a written answer.
             stopWhen: stepCountIs(maxSteps),
-            maxRetries: 0,
+            // Groq on-demand frequently returns transient TPM 429s with a
+            // short retry-after window. Allow the SDK's exponential backoff to
+            // retry before we declare this provider unavailable and fail over.
+            maxRetries: 2,
             // Last step is text-only so the model must narrate tool results.
             prepareStep: ({ stepNumber }: { stepNumber: number }) =>
               stepNumber >= Math.max(0, maxSteps - 1) ? { toolChoice: "none" as const } : {},
@@ -1601,7 +1604,7 @@ NEW TOOLS ADDED:
             if (st === 403)
               return "AI access is blocked for this workspace. Please check your settings.";
             if (isCapacityError(e) || st === 429) {
-              return "Wab AI is busy on one provider and could not reach a backup. Please try again in a moment — your data was not changed.";
+              return "Wab AI has temporarily hit a provider rate limit. It will retry briefly; if the limit persists, please try again in a few seconds. Your data was not changed.";
             }
             return "Wab AI hit an error. Your data was not changed — please try again.";
           };
