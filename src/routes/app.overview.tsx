@@ -30,6 +30,7 @@ import {
 } from "recharts";
 import { reveal, Panel } from "@/components/kit";
 import { useAuth } from "@/lib/auth-context";
+import { PortfolioMarketTerminal } from "@/components/portfolio/PortfolioMarketTerminal";
 import { useTransactions, useReconciliationFlags } from "@/lib/data-hooks";
 import { computeTax } from "@/lib/tax";
 import {
@@ -351,6 +352,9 @@ function MissionControl() {
           Upload Data
         </Link>
       </div>
+
+      {/* Premium trading-terminal portfolio view */}
+      <PortfolioMarketTerminal transactions={transactions} currency={currency} />
 
       {/* Daily Briefing */}
       <DailyBriefing />
