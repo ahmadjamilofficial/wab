@@ -20,7 +20,7 @@ import { useLedgerContext } from "@/lib/use-ledger-context";
 
 /** Deliberately constant near-black "hud" surface — reads the same in both themes. */
 const HUD_GRADIENT =
-  "linear-gradient(135deg, oklch(0.22 0.004 265) 0%, oklch(0.145 0.004 265) 100%)";
+  "radial-gradient(120% 180% at 0% 0%, oklch(0.24 0.025 255 / 0.72) 0%, transparent 52%), linear-gradient(145deg, oklch(0.105 0.012 255) 0%, oklch(0.075 0.008 260) 58%, oklch(0.095 0.018 165) 100%)";
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -112,13 +112,14 @@ export function DailyBriefing() {
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="overflow-hidden rounded-2xl"
+      className="group/briefing relative overflow-hidden rounded-[22px] transition-all duration-500 hover:-translate-y-[1px] hover:shadow-[0_24px_70px_rgba(0,0,0,0.32)]"
       style={{
         background: HUD_GRADIENT,
-        border: "1px solid rgba(255,255,255,0.07)",
+        border: "1px solid rgba(255,255,255,0.10)",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.045)",
       }}
     >
-      <div className="p-5 sm:p-6">
+      <div className="relative p-5 sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -157,22 +158,23 @@ export function DailyBriefing() {
         </div>
 
         {/* Key metrics */}
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           <div
-            className="rounded-xl p-3"
+            className="group/metric relative overflow-hidden rounded-2xl p-3.5 sm:p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.055] hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+              border: "1px solid rgba(255,255,255,0.075)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
             }}
           >
             <p
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[9px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
               Health Score
             </p>
             <p
-              className="tnum mt-1 text-xl font-bold"
+              className="tnum mt-2 text-[1.65rem] font-semibold tracking-[-0.045em] leading-none"
               style={{
                 color:
                   briefing.healthScore >= 80
@@ -190,20 +192,21 @@ export function DailyBriefing() {
           </div>
 
           <div
-            className="rounded-xl p-3"
+            className="group/metric relative overflow-hidden rounded-2xl p-3.5 sm:p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+              border: "1px solid rgba(255,255,255,0.075)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
             }}
           >
             <p
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[9px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
               Reconciled Today
             </p>
             <p
-              className="tnum mt-1 text-xl font-bold"
+              className="tnum mt-2 text-[1.65rem] font-semibold tracking-[-0.045em] leading-none"
               style={{ color: briefing.reconciledToday > 0 ? "#4ade80" : "rgba(255,255,255,0.5)" }}
             >
               {briefing.reconciledToday}
@@ -214,20 +217,21 @@ export function DailyBriefing() {
           </div>
 
           <div
-            className="rounded-xl p-3"
+            className="group/metric relative overflow-hidden rounded-2xl p-3.5 sm:p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+              border: "1px solid rgba(255,255,255,0.075)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
             }}
           >
             <p
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[9px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
               Open Issues
             </p>
             <p
-              className="tnum mt-1 text-xl font-bold"
+              className="tnum mt-2 text-[1.65rem] font-semibold tracking-[-0.045em] leading-none"
               style={{ color: briefing.newDiscrepancies > 0 ? "#f87171" : "#4ade80" }}
             >
               {briefing.newDiscrepancies}
@@ -238,20 +242,21 @@ export function DailyBriefing() {
           </div>
 
           <div
-            className="rounded-xl p-3"
+            className="group/metric relative overflow-hidden rounded-2xl p-3.5 sm:p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+              border: "1px solid rgba(255,255,255,0.075)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
             }}
           >
             <p
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[9px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
               Critical Issues
             </p>
             <p
-              className="tnum mt-1 text-xl font-bold"
+              className="tnum mt-2 text-[1.65rem] font-semibold tracking-[-0.045em] leading-none"
               style={{ color: criticalIssues > 0 ? "#f87171" : "#4ade80" }}
             >
               {criticalIssues}
@@ -302,10 +307,11 @@ export function DailyBriefing() {
 
         {criticalIssues === 0 && !briefing.topPriority && (
           <div
-            className="mt-4 flex items-center gap-2.5 rounded-xl p-3"
+            className="mt-4 flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-300 hover:brightness-110"
             style={{
-              background: "color-mix(in srgb, var(--ok) 8%, transparent)",
-              border: "1px solid color-mix(in srgb, var(--ok) 15%, transparent)",
+              background: "linear-gradient(100deg, rgba(34,197,94,0.085), rgba(34,197,94,0.025))",
+              border: "1px solid rgba(74,222,128,0.16)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.025)",
             }}
           >
             <CheckCircle2 size={14} style={{ color: "#4ade80" }} />
