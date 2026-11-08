@@ -20,7 +20,6 @@ import {
   Shield,
   Sparkles,
   Sun,
-  Upload,
   User,
   X,
 } from "lucide-react";
