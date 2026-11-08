@@ -309,7 +309,7 @@ function ActivityFeed() {
               const action = String(entry.action ?? "change");
               const entity = String(entry.entity_type ?? "record");
               const actor = String(entry.actor ?? "Workspace user");
-              const title = action.replace(/_/g, " ").replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+              const title = action.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
               return (
                 <motion.div
                   key={entry.id}
