@@ -214,7 +214,8 @@ function JobRow({ job, orgId }: { job: AgentJob; orgId: string }) {
 function ActivityFeed() {
   const { profile } = useAuth();
   const orgId = profile?.org_id;
-  const { data: jobs, isLoading, refetch, isFetching } = useAgentJobs(orgId, 100);\n  const { data: auditEntries = [], isLoading: auditLoading } = useAuditLog(orgId, 100);
+  const { data: jobs, isLoading, refetch, isFetching } = useAgentJobs(orgId, 100);
+  const { data: auditEntries = [], isLoading: auditLoading } = useAuditLog(orgId, 100);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
