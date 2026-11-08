@@ -14,7 +14,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { useAgentJobs, useRevertRun } from "@/lib/data-hooks";
+import { useAgentJobs, useAuditLog, useRevertRun } from "@/lib/data-hooks";
 import type { AgentJob } from "@/lib/agent-queue";
 
 export const Route = createFileRoute("/app/activity")({
@@ -214,7 +214,7 @@ function JobRow({ job, orgId }: { job: AgentJob; orgId: string }) {
 function ActivityFeed() {
   const { profile } = useAuth();
   const orgId = profile?.org_id;
-  const { data: jobs, isLoading, refetch, isFetching } = useAgentJobs(orgId, 100);
+  const { data: jobs, isLoading, refetch, isFetching } = useAgentJobs(orgId, 100);\n  const { data: auditEntries = [], isLoading: auditLoading } = useAuditLog(orgId, 100);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -248,6 +248,11 @@ function ActivityFeed() {
         ))}
       </div>
 
+      {/* Autonomous agent runs */}
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Autonomous runs</h2>
+        <span className="text-xs" style={{ color: "var(--ink-3)" }}>{jobs?.length ?? 0} recent</span>
+      </div>
       {/* Jobs list */}
       {isLoading ? (
         <div className="flex justify-center py-16">
@@ -273,6 +278,60 @@ function ActivityFeed() {
           </div>
         </AnimatePresence>
       )}
+
+      {/* Ledger mutations: manual entries, AI parsing and other audited changes */}
+      <section className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold">Recent ledger changes</h2>
+            <p className="mt-0.5 text-xs" style={{ color: "var(--ink-3)" }}>
+              Entries recorded in the organization audit log, including parsed and saved records.
+            </p>
+          </div>
+          <span className="text-xs" style={{ color: "var(--ink-3)" }}>{auditEntries.length} recent</span>
+        </div>
+        {auditLoading ? (
+          <div className="flex justify-center rounded-2xl py-8" style={{ border: "1px solid var(--hairline)" }}>
+            <Loader2 size={20} className="animate-spin" style={{ color: "var(--color-accent)" }} />
+          </div>
+        ) : auditEntries.length === 0 ? (
+          <div className="rounded-2xl px-5 py-8 text-center" style={{ border: "1px dashed var(--hairline)" }}>
+            <Info size={22} className="mx-auto" style={{ color: "var(--ink-3)" }} />
+            <p className="mt-2 text-sm font-medium">No audited ledger changes yet</p>
+            <p className="mt-1 text-xs" style={{ color: "var(--ink-3)" }}>
+              When a workflow writes an audit entry, it will appear here. AI-generated draft fields alone are not saved activity.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {auditEntries.map((entry) => {
+              const action = String(entry.action ?? "change");
+              const entity = String(entry.entity_type ?? "record");
+              const actor = String(entry.actor ?? "Workspace user");
+              const title = action.replace(/_/g, " ").replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+              return (
+                <motion.div
+                  key={entry.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+                  style={{ border: "1px solid var(--hairline)", background: "var(--surface)" }}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{title}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--ink-2)" }}>
+                      {entity} · {actor}
+                    </p>
+                  </div>
+                  <time className="shrink-0 text-xs" style={{ color: "var(--ink-3)" }}>
+                    {timeAgo(String(entry.created_at))}
+                  </time>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
