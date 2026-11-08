@@ -11,6 +11,30 @@ export const Route = createFileRoute("/app/parser/")({
 
 const LAST_THREAD_KEY = "wab.last.chat.thread";
 
+function readLastThread(): string | null {
+  try {
+    return window.sessionStorage.getItem(LAST_THREAD_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeLastThread(id: string) {
+  try {
+    window.sessionStorage.setItem(LAST_THREAD_KEY, id);
+  } catch {
+    // Workspace routing must still work when browser storage is unavailable.
+  }
+}
+
+function clearLastThread() {
+  try {
+    window.clearLastThread();
+  } catch {
+    // Ignore restricted/private browsing storage.
+  }
+}
+
 function ParserIndex() {
   const { user, session, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -23,7 +47,7 @@ function ParserIndex() {
     setFailure(null);
 
     try {
-      const cached = sessionStorage.getItem(LAST_THREAD_KEY);
+      const cached = readLastThread();
       if (cached) {
         const { data: cachedThread, error: cachedError } = await withTimeout(
           supabase.from("chat_threads").select("id").eq("id", cached).maybeSingle(),
@@ -52,7 +76,7 @@ function ParserIndex() {
 
       const found = existing?.[0]?.id;
       if (found) {
-        sessionStorage.setItem(LAST_THREAD_KEY, found);
+        writeLastThread(found);
         navigate({ to: "/app/parser/$threadId", params: { threadId: found }, replace: true });
         return;
       }
@@ -90,7 +114,7 @@ function ParserIndex() {
       );
       if (error || !created) throw new Error(error?.message ?? "Could not open the AI workspace.");
 
-      sessionStorage.setItem(LAST_THREAD_KEY, created.id);
+      writeLastThread(created.id);
       navigate({ to: "/app/parser/$threadId", params: { threadId: created.id }, replace: true });
     } catch (cause) {
       console.error("[Wab][ParserIndex] ERROR opening workspace", {
