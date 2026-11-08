@@ -1435,34 +1435,42 @@ export const Route = createFileRoute("/api/chat")({
           // Spreadsheets/text files can't go to the model as files — turn them into text tables.
           const modelMessages = await convertToModelMessages(uiMessages);
 
-          // Groq's OpenAI-compatible endpoint rejects the assistant-only
-          // reasoning_content property in prior-turn messages. AI SDK/provider
-          // conversions can place it on the message or nested content parts.
-          // Strip it recursively while preserving all other message fields.
-          const stripUnsupportedReasoningContent = (value: unknown): unknown => {
+          // Groq's OpenAI-compatible chat endpoint rejects reasoning_content.
+          // The AI SDK may restore this from assistant provider metadata even if
+          // it was removed from the converted message object. Strip reasoning
+          // parts, provider metadata, and snake/camel reasoning payload fields
+          // from assistant history before passing it to any Groq model.
+          const stripGroqReasoningFields = (value: unknown): unknown => {
             if (Array.isArray(value)) {
-              return value.map(stripUnsupportedReasoningContent);
+              return value.map(stripGroqReasoningFields);
             }
             if (value && typeof value === "object") {
               const entries = Object.entries(value as Record<string, unknown>)
-                .filter(([key]) => key !== "reasoning_content")
-                .map(([key, nested]) => [key, stripUnsupportedReasoningContent(nested)]);
+                .filter(([key]) =>
+                  key !== "reasoning_content" &&
+                  key !== "reasoningContent" &&
+                  key !== "reasoning",
+                )
+                .map(([key, nested]) => [key, stripGroqReasoningFields(nested)]);
               return Object.fromEntries(entries);
             }
             return value;
           };
 
           const cleanedMessages = modelMessages.map((message) => {
-            const withoutReasoningParts =
-              message.role === "assistant"
-                ? {
-                    ...message,
-                    content: Array.isArray(message.content)
-                      ? message.content.filter((part) => part.type !== "reasoning")
-                      : message.content,
-                  }
-                : message;
-            return stripUnsupportedReasoningContent(withoutReasoningParts) as typeof message;
+            if (message.role !== "assistant") {
+              return stripGroqReasoningFields(message) as typeof message;
+            }
+            const { providerMetadata: _providerMetadata, ...assistantMessage } = message as typeof message & {
+              providerMetadata?: unknown;
+            };
+            const withoutReasoningParts = {
+              ...assistantMessage,
+              content: Array.isArray(assistantMessage.content)
+                ? assistantMessage.content.filter((part) => part.type !== "reasoning")
+                : assistantMessage.content,
+            };
+            return stripGroqReasoningFields(withoutReasoningParts) as typeof message;
           });
 
           // tries the next free model whenever a provider/quota error is thrown
