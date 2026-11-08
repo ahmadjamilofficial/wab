@@ -932,28 +932,32 @@ function ImportPanel({
       return;
     }
     setStatus("saving");
+    setError(null);
+    const attempted = parsed.length;
     let saved = 0;
+    const failedRows: (TransactionInput & { _raw?: string })[] = [];
     const failures: string[] = [];
     for (const [index, row] of parsed.entries()) {
       try {
         await createTx.mutateAsync({ orgId, values: row });
         saved++;
       } catch (cause) {
+        failedRows.push(row);
         failures.push(`Row ${index + 1} (${row.ticker || "unknown ticker"}): ${cause instanceof Error ? cause.message : "Save failed"}`);
       }
     }
-    if (saved > 0) {
-      toast.success(`${saved} of ${parsed.length} transactions imported`);
-      onImported();
-    }
     if (failures.length > 0) {
+      if (saved > 0) toast.success(`${saved} of ${attempted} transactions imported`);
+      setParsed(failedRows);
       const detail = failures.slice(0, 4).join(" • ");
-      setError(`${saved} saved; ${failures.length} failed. ${detail}`);
+      setError(`${saved} saved; ${failures.length} still need saving. ${detail}`);
       toast.error(`${failures.length} transaction(s) could not be saved`);
       setStatus("review");
       return;
     }
+    toast.success(`${saved} transaction${saved !== 1 ? "s" : ""} imported`);
     setStatus("done");
+    onImported();
   }
 
   return (
@@ -1390,7 +1394,10 @@ function Ledger() {
 
   // Add transaction
   async function handleAdd(values: TransactionInput & { notes?: string }) {
-    if (!orgId) return;
+    if (!orgId) {
+      toast.error("Your workspace is still setting up. Please retry in a moment.");
+      return;
+    }
     try {
       await createTx.mutateAsync({ orgId, values });
       toast.success(`${values.ticker} added to ledger`);
