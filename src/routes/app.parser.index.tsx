@@ -29,7 +29,7 @@ function writeLastThread(id: string) {
 
 function clearLastThread() {
   try {
-    window.clearLastThread();
+    window.sessionStorage.removeItem(LAST_THREAD_KEY);
   } catch {
     // Ignore restricted/private browsing storage.
   }
