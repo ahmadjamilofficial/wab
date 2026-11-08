@@ -159,10 +159,31 @@ export async function resolveAgentModel(env?: EnvBag): Promise<ResolvedModel | n
   // Groq last: llama-3.3-70b often returns "high demand" even after a healthy probe.
   const groqKey = serverEnv("GROQ_API_KEY", env);
   if (groqKey) {
+    // GPT-OSS on Groq returns a reasoning payload by default. During a
+    // multi-step tool cycle the AI SDK can carry that payload into the next
+    // assistant history message, where Groq rejects reasoning_content (HTTP 400).
+    // Disable reasoning in the actual outbound body for every model step/probe.
+    const groqFetch: typeof fetch = async (input, init) => {
+      const body = init?.body;
+      if (typeof body === "string") {
+        try {
+          const payload = JSON.parse(body) as Record<string, unknown>;
+          if (typeof payload.model === "string" && payload.model.startsWith("openai/gpt-oss-")) {
+            payload.include_reasoning = false;
+            delete payload.reasoning_format;
+          }
+          return fetch(input, { ...init, body: JSON.stringify(payload) });
+        } catch {
+          // Preserve non-JSON request bodies.
+        }
+      }
+      return fetch(input, init);
+    };
     const provider = createOpenAICompatible({
       name: "groq",
       baseURL: "https://api.groq.com/openai/v1",
       apiKey: groqKey,
+      fetch: groqFetch,
     });
     const groqModels = [
       serverEnv("GROQ_MODEL", env) ?? "llama-3.1-8b-instant",
