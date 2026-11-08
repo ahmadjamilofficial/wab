@@ -1511,6 +1511,27 @@ NEW TOOLS ADDED:
               index,
           );
 
+          // One place that turns any failure into a safe, categorised message.
+          // The underlying error is always logged server-side so the real cause
+          // can be found in the hosting logs.
+          const describeStreamError = (e: unknown, where: string): string => {
+            console.error(
+              `[Wab Chat] ${where} error:`,
+              e instanceof Error ? (e.stack ?? e.message) : e,
+            );
+            const st = (e as { statusCode?: number })?.statusCode;
+            if (st === 402)
+              return "AI credits are used up. Add credits in your workspace settings to continue.";
+            if (st === 401)
+              return "AI authentication failed. Please check your API key configuration.";
+            if (st === 403)
+              return "AI access is blocked for this workspace. Please check your settings.";
+            if (isCapacityError(e) || st === 429) {
+              return "Wab AI is busy on one provider and could not reach a backup. Please try again in a moment — your data was not changed.";
+            }
+            return "Wab AI hit an error. Your data was not changed — please try again.";
+          };
+
           const stream = createUIMessageStream({
             originalMessages: body.messages as UIMessage[],
             execute: async ({ writer }) => {
@@ -1522,7 +1543,13 @@ NEW TOOLS ADDED:
                     ...STREAM_OPTS,
                     providerOptions: entry.providerOptions as never,
                   });
-                  const ui = result.toUIMessageStream({ sendReasoning: false });
+                  // Without onError the SDK masks every mid-stream failure as the
+                  // generic "An error occurred." — surface a real message instead.
+                  const ui = result.toUIMessageStream({
+                    sendReasoning: false,
+                    onError: (e) =>
+                      describeStreamError(e, `mid-stream (${entry.provider}/${entry.modelId})`),
+                  });
                   const iterator = ui[Symbol.asyncIterator]();
                   const first = await iterator.next();
                   const chunk = first.value as { type?: string; errorText?: string } | undefined;
@@ -1561,17 +1588,7 @@ NEW TOOLS ADDED:
                 ? lastError
                 : new Error("Every AI provider is busy. Please try again in a moment.");
             },
-            onError: (e) => {
-              const st = (e as { statusCode?: number })?.statusCode;
-              if (st === 402)
-                return "AI credits are used up. Add credits in your workspace settings to continue.";
-              if (st === 401) return "AI authentication failed. Please check your API key configuration.";
-              if (st === 403) return "AI access is blocked for this workspace. Please check your settings.";
-              if (isCapacityError(e) || st === 429) {
-                return "Wab AI is busy on one provider and could not reach a backup. Please try again in a moment — your data was not changed.";
-              }
-              return "Wab AI hit an error. Your data was not changed — please try again.";
-            },
+            onError: (e) => describeStreamError(e, "stream"),
             onFinish: async ({ messages }) => {
               await persistMessages(messages);
             },
