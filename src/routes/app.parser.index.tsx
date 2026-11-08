@@ -59,7 +59,7 @@ function ParserIndex() {
           navigate({ to: "/app/parser/$threadId", params: { threadId: cached }, replace: true });
           return;
         }
-        sessionStorage.removeItem(LAST_THREAD_KEY);
+        clearLastThread();
       }
 
       const { data: existing, error: listError } = await withTimeout(
