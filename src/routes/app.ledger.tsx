@@ -858,20 +858,33 @@ function ImportPanel({
   }
 
   async function saveAll() {
-    if (!orgId) return;
+    if (!orgId) {
+      setError("Your workspace is still loading. Refresh the page and try again.");
+      return;
+    }
     setStatus("saving");
     let saved = 0;
-    for (const row of parsed) {
+    const failures: string[] = [];
+    for (const [index, row] of parsed.entries()) {
       try {
         await createTx.mutateAsync({ orgId, values: row });
         saved++;
-      } catch {
-        // continue
+      } catch (cause) {
+        failures.push(`Row ${index + 1} (${row.ticker || "unknown ticker"}): ${cause instanceof Error ? cause.message : "Save failed"}`);
       }
     }
-    toast.success(`${saved} transaction${saved !== 1 ? "s" : ""} imported`);
+    if (saved > 0) {
+      toast.success(`${saved} of ${parsed.length} transactions imported`);
+      onImported();
+    }
+    if (failures.length > 0) {
+      const detail = failures.slice(0, 4).join(" • ");
+      setError(`${saved} saved; ${failures.length} failed. ${detail}`);
+      toast.error(`${failures.length} transaction(s) could not be saved`);
+      setStatus("review");
+      return;
+    }
     setStatus("done");
-    onImported();
   }
 
   return (
