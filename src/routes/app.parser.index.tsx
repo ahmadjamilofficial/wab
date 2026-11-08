@@ -25,7 +25,17 @@ function ParserIndex() {
     try {
       const cached = sessionStorage.getItem(LAST_THREAD_KEY);
       if (cached) {
-        navigate({ to: "/app/parser/$threadId", params: { threadId: cached }, replace: true });
+        const { data: cachedThread, error: cachedError } = await withTimeout(
+          supabase.from("chat_threads").select("id").eq("id", cached).maybeSingle(),
+          15000,
+          "Cached thread lookup",
+        );
+        if (cachedError) throw new Error(cachedError.message);
+        if (cachedThread?.id) {
+          navigate({ to: "/app/parser/$threadId", params: { threadId: cached }, replace: true });
+          return;
+        }
+        sessionStorage.removeItem(LAST_THREAD_KEY);
       }
 
       const { data: existing, error: listError } = await withTimeout(
