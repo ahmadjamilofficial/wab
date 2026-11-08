@@ -388,47 +388,74 @@ function ToolCard({
     const steps = Array.isArray(out["steps"]) ? (out["steps"] as string[]) : [];
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="my-3 overflow-hidden rounded-2xl"
-        style={{ border: "1px solid var(--accent-20)", background: "var(--accent-4)" }}
+        className="my-2 overflow-hidden rounded-xl"
+        style={{ border: "1px solid var(--hairline)", background: "var(--accent-3)" }}
       >
-        <div className="flex items-center gap-2 px-4 py-3">
-          <Sparkles size={14} style={{ color: "var(--color-accent)" }} />
-          <span
-            className="text-xs font-semibold uppercase tracking-wide"
-            style={{ color: "var(--color-accent)" }}
-          >
-            Task Plan
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left"
+        >
+          <Check size={14} style={{ color: "var(--ok)" }} />
+          <span className="text-xs font-semibold">Work plan</span>
+          <span className="ml-auto text-xs" style={{ color: "var(--ink-3)" }}>
+            {steps.length} steps
           </span>
+          <ChevronDown size={13} style={{ color: "var(--ink-3)", transform: open ? "rotate(180deg)" : "none" }} />
+        </button>
+        <div className="grid transition-[grid-template-rows] duration-200" style={{ gridTemplateRows: open ? "1fr" : "0fr" }}>
+          <div className="min-h-0 overflow-hidden">
+            {out["objective"] != null && <p className="px-3.5 pb-2 text-xs font-medium">{String(out["objective"])}</p>}
+            {steps.length > 0 && (
+              <ol className="space-y-1.5 px-3.5 pb-3">
+                {steps.map((step, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs" style={{ color: "var(--ink-2)" }}>
+                    <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-[10px]" style={{ background: "var(--accent-10)", color: "var(--color-accent)" }}>{i + 1}</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
         </div>
-        {out["objective"] != null && (
-          <p className="px-4 pb-2 text-sm font-medium">{String(out["objective"])}</p>
-        )}
-        {steps.length > 0 && (
-          <ul className="space-y-1.5 px-4 pb-4">
-            {steps.map((step, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2 text-xs"
-                style={{ color: "var(--ink-2)" }}
-              >
-                <span
-                  className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold"
-                  style={{ background: "var(--accent-14)", color: "var(--color-accent)" }}
-                >
-                  {i + 1}
-                </span>
-                {step}
-              </li>
-            ))}
-          </ul>
-        )}
       </motion.div>
     );
   }
 
-  if (rawName === "report_progress") return null;
+  if (rawName === "report_progress") {
+    const input = (part.input ?? {}) as Record<string, unknown>;
+    const output = (part.output ?? {}) as Record<string, unknown>;
+    const stage = String(input["stage"] ?? output["stage"] ?? "Working on your request");
+    const detailValue = input["detail"] ?? output["detail"];
+    const detail = typeof detailValue === "string" ? detailValue : "";
+    const progressRunning = running || part.state === "input-streaming" || part.state === "input-available";
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="my-1.5 flex items-start gap-2.5 rounded-xl px-3.5 py-2.5"
+        style={{ border: "1px solid var(--hairline)", background: "var(--accent-3)" }}
+        role="status"
+        aria-live="polite"
+      >
+        {progressRunning ? (
+          <Loader2 size={14} className="mt-0.5 shrink-0 animate-spin" style={{ color: "var(--color-accent)" }} />
+        ) : isError ? (
+          <X size={14} className="mt-0.5 shrink-0" style={{ color: "var(--bad)" }} />
+        ) : (
+          <Check size={14} className="mt-0.5 shrink-0" style={{ color: "var(--ok)" }} />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium">{stage}</p>
+          {detail && <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--ink-3)" }}>{detail}</p>}
+        </div>
+        <span className="shrink-0 text-[10px]" style={{ color: "var(--ink-3)" }}>{progressRunning ? "In progress" : isError ? "Failed" : "Done"}</span>
+      </motion.div>
+    );
+  }
 
   if (rawName === "prepare_spreadsheet" && isDone && part.output) {
     const out = part.output as Record<string, unknown>;
