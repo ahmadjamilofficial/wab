@@ -26,6 +26,7 @@ function ParserIndex() {
       const cached = sessionStorage.getItem(LAST_THREAD_KEY);
       if (cached) {
         navigate({ to: "/app/parser/$threadId", params: { threadId: cached }, replace: true });
+        return;
       }
 
       const { data: existing, error: listError } = await withTimeout(
