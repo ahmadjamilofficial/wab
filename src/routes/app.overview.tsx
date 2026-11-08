@@ -57,15 +57,8 @@ export const Route = createFileRoute("/app/overview")({
   component: MissionControl,
 });
 
-// Monochrome ramp — allocation slices must read as tonal steps, not hues.
-const allocationColors = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--color-sheet)",
-];
+// Distinct premium hues so each holding remains identifiable in the allocation ring.
+const allocationColors = ["#34D399", "#60A5FA", "#A78BFA", "#FBBF24", "#F472B6", "#22D3EE"];
 
 // ── Metric Card ───────────────────────────────────────────────────────────────
 
