@@ -550,3 +550,39 @@
     min-width: 640px;
   }
 }
+
+
+/* iOS Safari / iPadOS viewport and touch-scrolling hardening. */
+html,
+body {
+  min-height: 100%;
+  overscroll-behavior-y: none;
+}
+
+.app-mobile-main {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  min-width: 0;
+}
+
+@supports (height: 100dvh) {
+  .app-mobile-main {
+    max-height: 100dvh;
+  }
+}
+
+@media (max-width: 1023px) {
+  .app-mobile-main {
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .wab-composer-area {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-mobile-main input,
+  .app-mobile-main select,
+  .app-mobile-main textarea {
+    font-size: 16px;
+  }
+}
