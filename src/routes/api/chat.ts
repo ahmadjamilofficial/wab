@@ -1435,18 +1435,34 @@ export const Route = createFileRoute("/api/chat")({
           // Spreadsheets/text files can't go to the model as files — turn them into text tables.
           const modelMessages = await convertToModelMessages(uiMessages);
 
-          // Sanitize messages to remove reasoning_content which Groq doesn't support
-          const cleanedMessages = modelMessages.map((message) => {
-            if (message.role !== "assistant") {
-              return message;
+          // Groq's OpenAI-compatible endpoint rejects the assistant-only
+          // reasoning_content property in prior-turn messages. AI SDK/provider
+          // conversions can place it on the message or nested content parts.
+          // Strip it recursively while preserving all other message fields.
+          const stripUnsupportedReasoningContent = (value: unknown): unknown => {
+            if (Array.isArray(value)) {
+              return value.map(stripUnsupportedReasoningContent);
             }
+            if (value && typeof value === "object") {
+              const entries = Object.entries(value as Record<string, unknown>)
+                .filter(([key]) => key !== "reasoning_content")
+                .map(([key, nested]) => [key, stripUnsupportedReasoningContent(nested)]);
+              return Object.fromEntries(entries);
+            }
+            return value;
+          };
 
-            return {
-              ...message,
-              content: Array.isArray(message.content)
-                ? message.content.filter((part) => part.type !== "reasoning")
-                : message.content,
-            };
+          const cleanedMessages = modelMessages.map((message) => {
+            const withoutReasoningParts =
+              message.role === "assistant"
+                ? {
+                    ...message,
+                    content: Array.isArray(message.content)
+                      ? message.content.filter((part) => part.type !== "reasoning")
+                      : message.content,
+                  }
+                : message;
+            return stripUnsupportedReasoningContent(withoutReasoningParts) as typeof message;
           });
 
           // tries the next free model whenever a provider/quota error is thrown
