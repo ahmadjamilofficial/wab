@@ -394,16 +394,26 @@
   }
 }
 
-/* Chat transcript scrollbar — separate light/dark thumbs, ChatGPT-like gutter. */
+/*
+ * Chat transcript scrollbar — ChatGPT-style: the thumb stays invisible until
+ * the pointer is over the transcript, the gutter is reserved so content never
+ * shifts, and scroll chaining is contained so the page behind never moves.
+ */
 .chat-scroll {
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
+  scrollbar-color: transparent var(--chat-scrollbar-track);
+}
+
+.chat-scroll:hover {
   scrollbar-color: var(--chat-scrollbar-thumb) var(--chat-scrollbar-track);
 }
 
 .chat-scroll::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
   height: 0;
 }
 
@@ -412,14 +422,118 @@
 }
 
 .chat-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--chat-scrollbar-thumb);
+  background-color: transparent;
   border-radius: 99px;
-  border: 2px solid transparent;
+  border: 3px solid transparent;
   background-clip: padding-box;
+  transition: background-color 0.25s ease;
+}
+
+.chat-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: var(--chat-scrollbar-thumb);
 }
 
 .chat-scroll::-webkit-scrollbar-thumb:hover {
   background-color: var(--chat-scrollbar-thumb-hover);
+}
+
+/* ── Chat motion ─────────────────────────────────────────────────────────── */
+
+@keyframes wab-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes wab-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes wab-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* New turns ease in once on mount; history loaded with the thread never does. */
+.wab-msg-in {
+  animation: wab-msg-in 300ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.wab-fade-up {
+  animation: wab-fade-up 480ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.wab-pop-in {
+  animation: wab-pop-in 160ms ease-out backwards;
+}
+
+/* ── Chat composer ───────────────────────────────────────────────────────── */
+
+/* Soft pill-card with a quiet shadow; focus deepens the shadow instead of
+   drawing a hard ring (the base InputGroup ring is overridden on purpose). */
+.wab-composer [data-slot="input-group"] {
+  border-radius: 28px;
+  border-color: var(--hairline-strong);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-card) !important;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.wab-composer [data-slot="input-group"]:focus-within {
+  border-color: var(--accent-30);
+  box-shadow: var(--shadow-hover) !important;
+}
+
+.wab-composer textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-scrollbar-thumb) transparent;
+}
+
+/* Nothing to send yet → the send button rests dimmed (and inert), like ChatGPT.
+   Attachments count as content; an in-flight request always shows Stop. */
+.wab-composer:has(textarea:placeholder-shown):not(:has([data-has-attachments]))
+  .wab-send[data-generating="false"] {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Transcript text fades out under the composer instead of being cut off. */
+.wab-composer-area::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: -28px;
+  height: 28px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--background));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wab-msg-in,
+  .wab-fade-up,
+  .wab-pop-in {
+    animation: none;
+  }
 }
 
 @media (max-width: 1023px) {
