@@ -190,8 +190,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         "",
       _jurisdiction: (meta["jurisdiction"] as string | undefined) ?? "PSX",
     });
-    if (error || !data) {
-      return null;
+    if (error) {
+      console.error("[Wab][Auth] First-account provisioning RPC failed:", error.message);
+      throw new Error(`Workspace setup failed: ${error.message}`);
+    }
+    if (!data) {
+      throw new Error("Workspace setup did not return an organisation. Please contact support.");
     }
     const p = data as { id: string; org_id: string; full_name: string; role: string };
     return { id: p.id, org_id: p.org_id, full_name: p.full_name, role: p.role };
