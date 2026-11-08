@@ -93,8 +93,8 @@ function normalizeTicker(ticker: string, exchange: "PSX" | "NSE"): string {
   if (exchange === "NSE") {
     return `${ticker}.NS`;
   }
-  // PSX tickers might need .KAR suffix, but many work without
-  return ticker;
+  // Yahoo Finance maps Pakistan Stock Exchange symbols to the .KAR suffix.
+  return `${ticker}.KAR`;
 }
 
 // ─── Fetch multiple ticker prices (batched) ─────────────────────────────────
