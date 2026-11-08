@@ -33,6 +33,7 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   profile: OrgProfile | null;
+  profileError: string | null;
   loading: boolean;
   planChosen: boolean;
   signOut: () => Promise<void>;
@@ -43,6 +44,7 @@ const AuthContext = createContext<AuthContextValue>({
   session: null,
   user: null,
   profile: null,
+  profileError: null,
   loading: true,
   planChosen: false,
   signOut: async () => {},
@@ -53,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<OrgProfile | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const provisioning = useRef(false);
   // Guards against duplicate/overlapping loads from getSession + INITIAL_SESSION + SIGNED_IN.
@@ -132,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const plan = trialEnded ? "free" : entitlement.featurePlan;
       const planStatus = entitlement.paused || entitlement.expired ? "active" : (subRes.data?.status as string | undefined) ?? "active";
 
+      setProfileError(null);
       setProfile({
         profile_id: row.id,
         org_id: row.org_id,
@@ -146,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (cause) {
       console.error("[Wab][Auth] Profile provisioning/loading failed:", cause);
       setProfile(null);
+      setProfileError(cause instanceof Error ? cause.message : "Could not load your workspace.");
       throw cause;
     }
   }, []);
@@ -169,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadedUserId.current = u.id;
       } catch (error) {
         console.error("Error loading user profile:", error);
+        setProfileError(error instanceof Error ? error.message : "Could not load your workspace.");
       } finally {
         loadingUserId.current = null;
         setLoading(false);
@@ -190,8 +196,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         "",
       _jurisdiction: (meta["jurisdiction"] as string | undefined) ?? "PSX",
     });
-    if (error || !data) {
-      return null;
+    if (error) {
+      console.error("[Wab][Auth] First-account provisioning RPC failed:", error.message);
+      throw new Error(`Workspace setup failed: ${error.message}`);
+    }
+    if (!data) {
+      throw new Error("Workspace setup did not return an organisation. Please contact support.");
     }
     const p = data as { id: string; org_id: string; full_name: string; role: string };
     return { id: p.id, org_id: p.org_id, full_name: p.full_name, role: p.role };
@@ -228,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_OUT") {
         loadedUserId.current = null;
         setProfile(null);
+        setProfileError(null);
         setLoading(false);
         return;
       }
@@ -265,6 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         user,
         profile,
+        profileError,
         loading,
         planChosen,
         signOut: handleSignOut,

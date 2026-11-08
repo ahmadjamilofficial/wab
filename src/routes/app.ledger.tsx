@@ -192,7 +192,7 @@ function TxFormModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="max-h-[70vh] overflow-y-auto px-6 py-5">
+        <form onSubmit={handleSubmit} className="max-h-[calc(100dvh-8rem)] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <div className="grid grid-cols-2 gap-4">
             {/* Ticker */}
             <div className="col-span-2 sm:col-span-1">
@@ -744,16 +744,20 @@ function ImportPanel({
 
   async function addSheet() {
     setError(null);
-    const res = await fetch("/api/sheets-import", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: sheetUrl.trim() }),
-    });
-    const json = (await res.json().catch(() => ({}))) as { csv?: string; error?: string };
-    if (!res.ok || !json.csv) return setError(json.error ?? "Couldn't import that sheet.");
-    addFiles([new File([json.csv], "google-sheet.csv", { type: "text/csv" })]);
-    setSheetUrl("");
-    toast.success("Google Sheet added");
+    try {
+      const res = await fetch("/api/sheets-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: sheetUrl.trim() }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { csv?: string; error?: string };
+      if (!res.ok || !json.csv) throw new Error(json.error ?? "Couldn't import that sheet.");
+      addFiles([new File([json.csv], "google-sheet.csv", { type: "text/csv" })]);
+      setSheetUrl("");
+      toast.success("Google Sheet added");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Couldn't import that sheet.");
+    }
   }
   const createTx = useCreateTransaction();
   const { profile } = useAuth();
@@ -781,65 +785,130 @@ function ImportPanel({
 
     try {
       const results: (TransactionInput & { _raw?: string })[] = [];
-      const { complete } = await import("@/lib/groq-client");
+      const spreadsheetFiles = files.filter((file) =>
+        /\.(csv|xlsx|xls)$/i.test(file.name),
+      );
+      const textFiles = files.filter((file) => !/\.(csv|xlsx|xls)$/i.test(file.name));
 
-      for (const file of files) {
-        const lower = file.name.toLowerCase();
-        let content = "";
-        if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
-          const XLSX = await import("xlsx");
-          const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
-          content = wb.SheetNames.map(
-            (n) => `# Sheet: ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n]!),
-          ).join("\n\n");
-        } else if (
-          file.type.includes("text") ||
-          file.type.includes("csv") ||
-          lower.endsWith(".csv") ||
-          lower.endsWith(".txt")
-        ) {
-          content = await file.text();
-        } else {
-          throw new Error(
-            `${file.name}: PDFs and images are read in the Wab chat — drop them there instead.`,
-          );
+      // CSV and Excel imports are deterministic: no AI provider/key/quota is
+      // required to turn a spreadsheet with headers into ledger rows.
+      if (spreadsheetFiles.length > 0) {
+        const XLSX = await import("xlsx");
+        const aliases: Record<string, string[]> = {
+          ticker: ["ticker", "symbol", "stock", "security", "scrip", "company"],
+          action: ["action", "side", "transaction type", "type", "buy sell", "trade type"],
+          quantity: ["quantity", "qty", "shares", "units", "volume"],
+          price: ["price", "rate", "trade price", "avg price", "average price"],
+          fees: ["fees", "fee", "commission", "brokerage", "charges"],
+          wht: ["wht", "tax", "withholding tax", "withholding", "withholding tax amount"],
+          trade_date: ["trade date", "date", "transaction date", "order date", "settlement date"],
+          ref_id: ["ref id", "reference", "reference id", "order id", "trade id", "contract no"],
+          broker: ["broker", "broker name", "member", "dealer"],
+          exchange: ["exchange", "market"],
+        };
+        const numberValue = (value: unknown): number => {
+          const cleaned = String(value ?? "").replace(/[,\s]/g, "").replace(/[^0-9.\-]/g, "");
+          const parsed = Number(cleaned);
+          return Number.isFinite(parsed) ? parsed : 0;
+        };
+        const dateValue = (value: unknown): string => {
+          if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+          const raw = String(value ?? "").trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+          const parsed = new Date(raw);
+          return Number.isNaN(parsed.getTime()) ? new Date().toISOString().slice(0, 10) : parsed.toISOString().slice(0, 10);
+        };
+
+        for (const file of spreadsheetFiles) {
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
+          for (const sheetName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            if (!sheet) continue;
+            const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+              defval: "",
+              raw: false,
+            });
+            for (const source of rows) {
+              const normalized = new Map(
+                Object.entries(source).map(([key, value]) => [
+                  key.toLowerCase().replace(/[_\-]+/g, " ").trim(),
+                  value,
+                ]),
+              );
+              const pick = (field: string): unknown => {
+                for (const alias of aliases[field] ?? [field]) {
+                  if (normalized.has(alias)) return normalized.get(alias);
+                }
+                return "";
+              };
+              const ticker = String(pick("ticker") ?? "").trim().toUpperCase();
+              const quantity = numberValue(pick("quantity"));
+              const price = numberValue(pick("price"));
+              if (!ticker || quantity <= 0 || price <= 0) continue;
+              const rawAction = String(pick("action") ?? "BUY").trim().toUpperCase();
+              const action = /^(S|SELL|SALE|SOLD)$/.test(rawAction)
+                ? "SELL"
+                : /^(D|DIV|DIVIDEND)$/.test(rawAction)
+                  ? "DIV"
+                  : "BUY";
+              results.push({
+                ticker,
+                action,
+                quantity,
+                price,
+                fees: numberValue(pick("fees")),
+                wht: numberValue(pick("wht")),
+                trade_date: dateValue(pick("trade_date")),
+                ref_id: String(pick("ref_id") ?? "").trim(),
+                broker: String(pick("broker") ?? "").trim(),
+                exchange: String(pick("exchange") ?? "PSX").trim() || "PSX",
+                _raw: file.name,
+              });
+            }
+          }
         }
+      }
 
-        const raw = await complete({
-          systemPrompt:
-            "You extract brokerage transactions. Reply with ONLY a JSON array, no prose.",
-          userPrompt: `Extract ALL transactions from this financial document as a JSON array. Each object must have: ticker, action (BUY/SELL/DIV), quantity, price, fees, wht, trade_date (YYYY-MM-DD), ref_id, broker, exchange.\n\n${content.slice(0, 50000)}`,
-        });
-
-        // Strip markdown fences
-        const clean = raw
-          .replace(/```[a-z]*\n?/g, "")
-          .replace(/```/g, "")
-          .trim();
-        let rows: unknown[];
-        try {
-          rows = JSON.parse(clean) as unknown[];
-        } catch {
-          rows = [];
-        }
-
-        for (const row of rows) {
-          const r = row as Record<string, unknown>;
-          results.push({
-            ticker: String(r["ticker"] ?? "").toUpperCase(),
-            action: (["BUY", "SELL", "DIV"].includes(String(r["action"]).toUpperCase())
-              ? String(r["action"]).toUpperCase()
-              : "BUY") as "BUY" | "SELL" | "DIV",
-            quantity: Number(r["quantity"] ?? 0),
-            price: Number(r["price"] ?? 0),
-            fees: Number(r["fees"] ?? 0),
-            wht: Number(r["wht"] ?? 0),
-            trade_date: String(r["trade_date"] ?? new Date().toISOString().slice(0, 10)),
-            ref_id: String(r["ref_id"] ?? ""),
-            broker: String(r["broker"] ?? ""),
-            exchange: String(r["exchange"] ?? "PSX"),
-            _raw: file.name,
+      // Plain-text statements still use the server-side AI extractor.
+      if (textFiles.length > 0) {
+        const { complete } = await import("@/lib/groq-client");
+        for (const file of textFiles) {
+          const content = await file.text();
+          const raw = await complete({
+            systemPrompt:
+              "You extract brokerage transactions. Reply with ONLY a JSON array, no prose.",
+            userPrompt: `Extract ALL transactions from this financial document as a JSON array. Each object must have: ticker, action (BUY/SELL/DIV), quantity, price, fees, wht, trade_date (YYYY-MM-DD), ref_id, broker, exchange.\n\n${content.slice(0, 50000)}`,
           });
+          const clean = raw.replace(/\`\`\`[a-z]*\n?/g, "").replace(/\`\`\`/g, "").trim();
+          let rows: unknown[] = [];
+          try {
+            rows = JSON.parse(clean) as unknown[];
+          } catch {
+            throw new Error(`${file.name}: AI returned invalid transaction data. Try CSV or Excel format.`);
+          }
+          for (const row of rows) {
+            const r = row as Record<string, unknown>;
+            const ticker = String(r["ticker"] ?? "").trim().toUpperCase();
+            const quantity = Number(r["quantity"] ?? 0);
+            const price = Number(r["price"] ?? 0);
+            if (!ticker || quantity <= 0 || price <= 0) continue;
+            results.push({
+              ticker,
+              action: (["BUY", "SELL", "DIV"].includes(String(r["action"]).toUpperCase())
+                ? String(r["action"]).toUpperCase()
+                : "BUY") as "BUY" | "SELL" | "DIV",
+              quantity,
+              price,
+              fees: Number(r["fees"] ?? 0),
+              wht: Number(r["wht"] ?? 0),
+              trade_date: String(r["trade_date"] ?? new Date().toISOString().slice(0, 10)),
+              ref_id: String(r["ref_id"] ?? ""),
+              broker: String(r["broker"] ?? ""),
+              exchange: String(r["exchange"] ?? "PSX"),
+              _raw: file.name,
+            });
+          }
         }
       }
 
@@ -858,16 +927,33 @@ function ImportPanel({
   }
 
   async function saveAll() {
-    if (!orgId) return;
+    if (!orgId) {
+      setError("Your workspace is still loading. Refresh the page and try again.");
+      return;
+    }
     setStatus("saving");
+    setError(null);
+    const attempted = parsed.length;
     let saved = 0;
-    for (const row of parsed) {
+    const failedRows: (TransactionInput & { _raw?: string })[] = [];
+    const failures: string[] = [];
+    for (const [index, row] of parsed.entries()) {
       try {
         await createTx.mutateAsync({ orgId, values: row });
         saved++;
-      } catch {
-        // continue
+      } catch (cause) {
+        failedRows.push(row);
+        failures.push(`Row ${index + 1} (${row.ticker || "unknown ticker"}): ${cause instanceof Error ? cause.message : "Save failed"}`);
       }
+    }
+    if (failures.length > 0) {
+      if (saved > 0) toast.success(`${saved} of ${attempted} transactions imported`);
+      setParsed(failedRows);
+      const detail = failures.slice(0, 4).join(" • ");
+      setError(`${saved} saved; ${failures.length} still need saving. ${detail}`);
+      toast.error(`${failures.length} transaction(s) could not be saved`);
+      setStatus("review");
+      return;
     }
     toast.success(`${saved} transaction${saved !== 1 ? "s" : ""} imported`);
     setStatus("done");
@@ -888,7 +974,7 @@ function ImportPanel({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 16 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl bg-surface shadow-2xl"
+        className="relative z-10 w-full max-w-xl max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl bg-surface shadow-2xl"
         style={{ border: "1px solid var(--hairline)" }}
       >
         {/* Header */}
@@ -910,7 +996,7 @@ function ImportPanel({
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
+        <div className="max-h-[calc(100dvh-8rem)] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           {/* ── Upload zone ── */}
           {(status === "idle" || status === "parsing") && (
             <>
@@ -1033,7 +1119,7 @@ function ImportPanel({
                     </>
                   ) : (
                     <>
-                      <Sparkles size={14} /> Parse with AI
+                      <Sparkles size={14} /> Parse files
                     </>
                   )}
                 </button>
@@ -1044,6 +1130,11 @@ function ImportPanel({
           {/* ── Review parsed results ── */}
           {status === "review" && (
             <>
+              {error && (
+                <div className="mb-3 rounded-xl px-3 py-3 text-xs" style={{ background: "color-mix(in srgb, var(--bad) 6%, transparent)", color: "var(--bad)" }}>
+                  {error}
+                </div>
+              )}
               <div className="mb-4 flex items-center gap-2">
                 <Check size={15} style={{ color: "var(--ok)" }} />
                 <p className="text-sm font-semibold">
@@ -1303,7 +1394,10 @@ function Ledger() {
 
   // Add transaction
   async function handleAdd(values: TransactionInput & { notes?: string }) {
-    if (!orgId) return;
+    if (!orgId) {
+      toast.error("Your workspace is still setting up. Please retry in a moment.");
+      return;
+    }
     try {
       await createTx.mutateAsync({ orgId, values });
       toast.success(`${values.ticker} added to ledger`);
