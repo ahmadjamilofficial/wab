@@ -174,7 +174,7 @@ export function DailyBriefing() {
               Health Score
             </p>
             <p
-              className="tnum mt-1 text-xl font-bold"
+              className="tnum mt-2 text-[1.65rem] font-semibold tracking-[-0.045em] leading-none"
               style={{
                 color:
                   briefing.healthScore >= 80
@@ -192,20 +192,21 @@ export function DailyBriefing() {
           </div>
 
           <div
-            className="rounded-xl p-3"
+            className="group/metric relative overflow-hidden rounded-2xl p-3.5 sm:p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+              border: "1px solid rgba(255,255,255,0.075)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
             }}
           >
             <p
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[9px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
               Reconciled Today
             </p>
             <p
-              className="tnum mt-1 text-xl font-bold"
+              className="tnum mt-2 text-[1.65rem] font-semibold tracking-[-0.045em] leading-none"
               style={{ color: briefing.reconciledToday > 0 ? "#4ade80" : "rgba(255,255,255,0.5)" }}
             >
               {briefing.reconciledToday}
@@ -216,20 +217,21 @@ export function DailyBriefing() {
           </div>
 
           <div
-            className="rounded-xl p-3"
+            className="group/metric relative overflow-hidden rounded-2xl p-3.5 sm:p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+              border: "1px solid rgba(255,255,255,0.075)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
             }}
           >
             <p
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[9px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
               Open Issues
             </p>
             <p
-              className="tnum mt-1 text-xl font-bold"
+              className="tnum mt-2 text-[1.65rem] font-semibold tracking-[-0.045em] leading-none"
               style={{ color: briefing.newDiscrepancies > 0 ? "#f87171" : "#4ade80" }}
             >
               {briefing.newDiscrepancies}
@@ -240,20 +242,21 @@ export function DailyBriefing() {
           </div>
 
           <div
-            className="rounded-xl p-3"
+            className="group/metric relative overflow-hidden rounded-2xl p-3.5 sm:p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+              border: "1px solid rgba(255,255,255,0.075)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
             }}
           >
             <p
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[9px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
               Critical Issues
             </p>
             <p
-              className="tnum mt-1 text-xl font-bold"
+              className="tnum mt-2 text-[1.65rem] font-semibold tracking-[-0.045em] leading-none"
               style={{ color: criticalIssues > 0 ? "#f87171" : "#4ade80" }}
             >
               {criticalIssues}
