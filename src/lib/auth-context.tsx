@@ -72,17 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let row = existingRow;
 
       if (error) {
-        return;
+        console.error("[Wab][Auth] Profile lookup failed:", error.message);
+        throw new Error(`Profile lookup failed: ${error.message}`);
       }
 
       // 2. Self-provision organisation + profile on first login (Basic $0 by default)
       if (!row && !provisioning.current) {
         provisioning.current = true;
-        row = await provision(u);
-        provisioning.current = false;
+        try {
+          row = await provision(u);
+        } finally {
+          provisioning.current = false;
+        }
       }
       if (!row) {
-        return;
+        throw new Error("Your workspace profile could not be created. Please retry.");
       }
 
       const joined = await acceptStoredInvite();
@@ -108,6 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq("org_id", row.org_id)
           .maybeSingle(),
       ]);
+
+      if (orgRes.error) throw new Error(`Organisation lookup failed: ${orgRes.error.message}`);
+      if (subRes.error) console.warn("[Wab][Auth] Subscription lookup failed:", subRes.error.message);
 
       const entitlement = resolveEntitlement({
         orgId: row.org_id,
@@ -137,7 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar_url: u.user_metadata?.["avatar_url"] as string | undefined,
       });
     } catch (cause) {
-      // Silent error handling
+      console.error("[Wab][Auth] Profile provisioning/loading failed:", cause);
+      setProfile(null);
+      throw cause;
     }
   }, []);
 
