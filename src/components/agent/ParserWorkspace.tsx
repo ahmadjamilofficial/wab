@@ -310,9 +310,9 @@ function narrateToolOutput(name: string, output: unknown): string {
       ["Total charges", money(metrics["total_charges"])],
       ["Net cash impact", money(metrics["net_cash_impact"])],
     ];
-    const table = rows.map(([label, value]) => `| ${label} | ${String(value)} |`).join("\\n");
-    const note = typeof rec["note"] === "string" ? `\\n\\n_${rec["note"]}_` : "";
-    return `## Latest trade — ${ticker} (${action})\\n\\n**Trade date:** ${date}\\n\\n| Metric | Value |\\n|:--|--:|\\n${table}\\n\\n_Source: your ledger._${note}`;
+    const table = rows.map(([label, value]) => `| ${label} | ${String(value)} |`).join("\n");
+    const note = typeof rec["note"] === "string" ? `\n\n_${rec["note"]}_` : "";
+    return `## Latest trade — ${ticker} (${action})\n\n**Trade date:** ${date}\n\n| Metric | Value |\n|:--|--:|\n${table}\n\n_Source: your ledger._${note}`;
   }
   if (typeof rec["message"] === "string" && rec["accounts"] == null) return rec["message"];
 
