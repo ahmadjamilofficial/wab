@@ -974,7 +974,7 @@ function ImportPanel({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 16 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl bg-surface shadow-2xl"
+        className="relative z-10 w-full max-w-xl max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl bg-surface shadow-2xl"
         style={{ border: "1px solid var(--hairline)" }}
       >
         {/* Header */}
@@ -996,7 +996,7 @@ function ImportPanel({
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
+        <div className="max-h-[calc(100dvh-8rem)] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           {/* ── Upload zone ── */}
           {(status === "idle" || status === "parsing") && (
             <>
