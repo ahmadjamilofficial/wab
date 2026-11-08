@@ -289,6 +289,31 @@ function narrateToolOutput(name: string, output: unknown): string {
 
   const rec = output as Record<string, unknown>;
   if (typeof rec["error"] === "string") return rec["error"];
+
+  // Render latest-trade metrics as a compact user-facing report, not raw tool fields.
+  if (name === "get_latest_trade_metrics") {
+    if (rec["found"] !== true) {
+      return typeof rec["note"] === "string" ? rec["note"] : "No latest trade was found in your ledger.";
+    }
+    const trade = (rec["trade"] ?? {}) as Record<string, unknown>;
+    const metrics = (rec["metrics"] ?? {}) as Record<string, unknown>;
+    const money = (value: unknown) => formatMoney(value, "PKR");
+    const ticker = String(trade["ticker"] ?? "Trade");
+    const action = String(trade["action"] ?? "Trade");
+    const date = String(trade["trade_date"] ?? "Date unavailable");
+    const rows: Array<[string, unknown]> = [
+      ["Quantity", trade["quantity"] ?? "—"],
+      ["Price", money(trade["price"])],
+      ["Gross value", money(metrics["gross_value"])],
+      ["Fees", money(metrics["fees"])],
+      ["Withholding tax", money(metrics["withholding_tax"])],
+      ["Total charges", money(metrics["total_charges"])],
+      ["Net cash impact", money(metrics["net_cash_impact"])],
+    ];
+    const table = rows.map(([label, value]) => `| ${label} | ${String(value)} |`).join("\\n");
+    const note = typeof rec["note"] === "string" ? `\\n\\n_${rec["note"]}_` : "";
+    return `## Latest trade — ${ticker} (${action})\\n\\n**Trade date:** ${date}\\n\\n| Metric | Value |\\n|:--|--:|\\n${table}\\n\\n_Source: your ledger._${note}`;
+  }
   if (typeof rec["message"] === "string" && rec["accounts"] == null) return rec["message"];
 
   if (Array.isArray(rec["accounts"])) {
