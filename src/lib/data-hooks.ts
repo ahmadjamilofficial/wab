@@ -57,12 +57,23 @@ export function useCreateTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ orgId, values }: { orgId: string; values: TransactionInput }) => {
+      // Never spread UI-only fields (e.g. notes, _raw) into a PostgREST row.
+      // Supabase rejects unknown columns, which previously broke both manual
+      // entry and file imports even when the visible form looked valid.
       const { data, error } = await supabase
         .from("transactions")
         .insert({
           org_id: orgId,
-          ...values,
-          ticker: values.ticker.toUpperCase(),
+          ticker: values.ticker.trim().toUpperCase(),
+          action: values.action,
+          quantity: values.quantity,
+          price: values.price,
+          fees: values.fees ?? 0,
+          wht: values.wht ?? 0,
+          trade_date: values.trade_date,
+          ref_id: values.ref_id ?? "",
+          broker: values.broker ?? "",
+          exchange: values.exchange || "PSX",
           confidence_score: 1,
           status: "posted",
         } as never)
@@ -87,9 +98,22 @@ export function useUpdateTransaction() {
       orgId: string;
       values: Partial<TransactionInput> & { status?: string };
     }) => {
+      const allowed: Partial<TransactionInput> & { status?: string } = {};
+      const fields: Array<keyof TransactionInput> = [
+        "ticker", "action", "quantity", "price", "fees", "wht",
+        "trade_date", "ref_id", "broker", "exchange",
+      ];
+      for (const field of fields) {
+        if (values[field] !== undefined) {
+          (allowed as Record<string, unknown>)[field] = values[field];
+        }
+      }
+      if (values.status !== undefined) allowed.status = values.status;
+      if (allowed.ticker) allowed.ticker = allowed.ticker.trim().toUpperCase();
+
       const { error } = await supabase
         .from("transactions")
-        .update(values as never)
+        .update(allowed as never)
         .eq("id", id)
         .eq("org_id", orgId);
       if (error) throw new Error(error.message);
