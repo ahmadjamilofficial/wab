@@ -3,12 +3,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
   BookOpen,
-  Check,
   ChevronDown,
   CreditCard,
   GitFork,
   Inbox,
-  Languages,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -37,7 +35,6 @@ import {
 import { usePendingApprovals } from "@/lib/data-hooks";
 import { useAgentHeartbeat } from "@/lib/use-agent-heartbeat";
 import { useTheme } from "@/lib/theme-context";
-import { LOCALES, useLocale, type LocaleCode } from "@/lib/locale-context";
 
 const SIDEBAR_KEY = "wab.sidebar.expanded";
 function readSidebarPref(): boolean {
@@ -57,42 +54,42 @@ function writeSidebarPref(v: boolean) {
   }
 }
 
-const primaryItem = { labelKey: "askWab" as const, icon: Sparkles, to: "/app/parser" };
+const primaryItem = { label: "Ask Wab", icon: Sparkles, to: "/app/parser" } as const;
 
 const navGroups = [
   {
-    titleKey: "workspace" as const,
+    title: "Workspace",
     items: [
-      { labelKey: "portfolio" as const, icon: LayoutDashboard, to: "/app/overview" },
-      { labelKey: "ledger" as const, icon: BookOpen, to: "/app/ledger" },
-      { labelKey: "exceptions" as const, icon: GitFork, to: "/app/reconciliation" },
-      { labelKey: "dataSources" as const, icon: Plug, to: "/app/sources" },
-      { labelKey: "integrations" as const, icon: Share2, to: "/app/integrations" },
-      { labelKey: "taxCenter" as const, icon: BarChart3, to: "/app/tax" },
-      { labelKey: "auditTrail" as const, icon: Shield, to: "/app/audit-trail" },
+      { label: "Portfolio", icon: LayoutDashboard, to: "/app/overview" },
+      { label: "Ledger", icon: BookOpen, to: "/app/ledger" },
+      { label: "Exceptions", icon: GitFork, to: "/app/reconciliation" },
+      { label: "Data Sources", icon: Plug, to: "/app/sources" },
+      { label: "Integrations", icon: Share2, to: "/app/integrations" },
+      { label: "Tax Center", icon: BarChart3, to: "/app/tax" },
+      { label: "Audit Trail", icon: Shield, to: "/app/audit-trail" },
     ],
   },
   {
-    titleKey: "autonomous" as const,
+    title: "Autonomous",
     items: [
-      { labelKey: "activityFeed" as const, icon: Radio, to: "/app/activity" },
-      { labelKey: "reviewInbox" as const, icon: Inbox, to: "/app/review" },
+      { label: "Activity Feed", icon: Radio, to: "/app/activity" },
+      { label: "Review Inbox", icon: Inbox, to: "/app/review" },
     ],
   },
   {
-    titleKey: "account" as const,
+    title: "Account",
     items: [
-      { labelKey: "settings" as const, icon: Settings, to: "/app/settings" },
-      { labelKey: "billing" as const, icon: CreditCard, to: "/app/billing" },
+      { label: "Settings", icon: Settings, to: "/app/settings" },
+      { label: "Billing", icon: CreditCard, to: "/app/billing" },
     ],
   },
 ] as const;
 
 const mobileTabs = [
-  { labelKey: "askWab" as const, icon: Sparkles, to: "/app/parser" },
-  { labelKey: "portfolio" as const, icon: LayoutDashboard, to: "/app/overview" },
-  { labelKey: "ledger" as const, icon: BookOpen, to: "/app/ledger" },
-  { labelKey: "reviewInbox" as const, icon: Inbox, to: "/app/review" },
+  { label: "Ask Wab", icon: Sparkles, to: "/app/parser" },
+  { label: "Portfolio", icon: LayoutDashboard, to: "/app/overview" },
+  { label: "Ledger", icon: BookOpen, to: "/app/ledger" },
+  { label: "Review", icon: Inbox, to: "/app/review" },
 ] as const;
 
 function NavItem({
