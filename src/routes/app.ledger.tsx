@@ -192,7 +192,7 @@ function TxFormModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="max-h-[70vh] overflow-y-auto px-6 py-5">
+        <form onSubmit={handleSubmit} className="max-h-[calc(100dvh-8rem)] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <div className="grid grid-cols-2 gap-4">
             {/* Ticker */}
             <div className="col-span-2 sm:col-span-1">
@@ -744,16 +744,20 @@ function ImportPanel({
 
   async function addSheet() {
     setError(null);
-    const res = await fetch("/api/sheets-import", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: sheetUrl.trim() }),
-    });
-    const json = (await res.json().catch(() => ({}))) as { csv?: string; error?: string };
-    if (!res.ok || !json.csv) return setError(json.error ?? "Couldn't import that sheet.");
-    addFiles([new File([json.csv], "google-sheet.csv", { type: "text/csv" })]);
-    setSheetUrl("");
-    toast.success("Google Sheet added");
+    try {
+      const res = await fetch("/api/sheets-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: sheetUrl.trim() }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { csv?: string; error?: string };
+      if (!res.ok || !json.csv) throw new Error(json.error ?? "Couldn't import that sheet.");
+      addFiles([new File([json.csv], "google-sheet.csv", { type: "text/csv" })]);
+      setSheetUrl("");
+      toast.success("Google Sheet added");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Couldn't import that sheet.");
+    }
   }
   const createTx = useCreateTransaction();
   const { profile } = useAuth();
@@ -1111,7 +1115,7 @@ function ImportPanel({
                     </>
                   ) : (
                     <>
-                      <Sparkles size={14} /> Parse with AI
+                      <Sparkles size={14} /> Parse files
                     </>
                   )}
                 </button>
@@ -1122,6 +1126,11 @@ function ImportPanel({
           {/* ── Review parsed results ── */}
           {status === "review" && (
             <>
+              {error && (
+                <div className="mb-3 rounded-xl px-3 py-3 text-xs" style={{ background: "color-mix(in srgb, var(--bad) 6%, transparent)", color: "var(--bad)" }}>
+                  {error}
+                </div>
+              )}
               <div className="mb-4 flex items-center gap-2">
                 <Check size={15} style={{ color: "var(--ok)" }} />
                 <p className="text-sm font-semibold">
