@@ -645,6 +645,56 @@ export const Route = createFileRoute("/api/chat")({
                   }
                 }),
             }),
+            get_latest_trade_metrics: tool({
+              description:
+                "Read the most recent trade from the signed-in user's ledger and calculate its gross value, fees/WHT total, and net cash impact. Use for questions like latest trade metrics or metrics from my last trade. Read-only and deterministic.",
+              inputSchema: z.object({ ticker: z.string().nullable() }),
+              execute: async ({ ticker }) => {
+                let query = supabase
+                  .from("transactions")
+                  .select("id,ticker,action,quantity,price,fees,wht,trade_date,ref_id,broker,exchange,status,confidence_score")
+                  .eq("org_id", thread.org_id)
+                  .order("trade_date", { ascending: false })
+                  .order("created_at", { ascending: false })
+                  .limit(1);
+                if (ticker) query = query.eq("ticker", ticker.toUpperCase());
+                const { data, error } = await query;
+                if (error) throw new Error(error.message);
+                const trade = data?.[0];
+                if (!trade) return { found: false, note: "No trade records were found in the ledger." };
+                const quantity = Number(trade.quantity);
+                const price = Number(trade.price);
+                const fees = Number(trade.fees ?? 0);
+                const wht = Number(trade.wht ?? 0);
+                const grossValue = quantity * price;
+                const totalCharges = fees + wht;
+                return {
+                  found: true,
+                  source: "user_ledger",
+                  trade: {
+                    id: trade.id,
+                    ticker: trade.ticker,
+                    action: trade.action,
+                    quantity,
+                    price,
+                    trade_date: trade.trade_date,
+                    reference: trade.ref_id,
+                    broker: trade.broker,
+                    exchange: trade.exchange,
+                    status: trade.status,
+                    confidence_score: trade.confidence_score,
+                  },
+                  metrics: {
+                    gross_value: grossValue,
+                    fees,
+                    withholding_tax: wht,
+                    total_charges: totalCharges,
+                    net_cash_impact: trade.action === "SELL" ? grossValue - totalCharges : grossValue + totalCharges,
+                  },
+                  note: "Net cash impact is gross value adjusted by fees and withholding tax; BUY adds charges, SELL subtracts charges. This is ledger-derived, not a live market valuation.",
+                };
+              },
+            }),
             get_transactions: tool({
               description:
                 "Read the signed-in user's real transaction ledger before answering questions about trades, holdings, fees, or tax.",
@@ -1426,7 +1476,7 @@ You are a fast, precise financial audit agent for PSX and NSE traders. You are c
 
 ━━ DATA ━━
 - Account/profile/plan/organisation → get_account_overview
-- Ledger rows → get_transactions; totals → get_ledger_summary; holdings/portfolio → get_portfolio_analysis
+- Latest trade metrics → get_latest_trade_metrics; ledger rows → get_transactions; totals → get_ledger_summary; holdings/portfolio → get_portfolio_analysis
 - Tax → get_tax_computation; issues → get_open_flags; incomplete rows → get_unfinished_records; brokers → get_broker_accounts
 - Connected exchanges/wallets/banks, live balances or “what changed” → get_live_balances
 - Google Sheets link in the message → read_google_sheet, then analyse or import the rows
@@ -1446,7 +1496,7 @@ Mark figures as verified (with source) or assumption. Use markdown tables. Never
 
 NEW TOOLS ADDED:
 - investigate_discrepancy: automated multi-step investigation — use this when user reports a mismatch, duplicate, or unexplained difference. Returns structured evidence (transactions, flags, duplicates, low-confidence records).
-- get_financial_health: full org health snapshot (totals, flags, health score) — use for "give me an overview" / "what needs attention" queries.`;
+- get_financial_health: full org health snapshot (totals, flags, health score) — use for "give me an overview" / "what needs attention" queries.\n- get_latest_trade_metrics: deterministic latest ledger trade figures (gross value, charges, net cash impact).`;
 
           const STREAM_OPTS = {
             system: SYSTEM_PROMPT + planSection,
