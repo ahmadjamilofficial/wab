@@ -412,7 +412,7 @@ function InnerShell({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="flex h-dvh h-screen overflow-hidden"
+      className="flex h-screen overflow-hidden"\n      style={{ height: "100dvh", minHeight: 0, background: "var(--color-login-bg)", fontFamily: "var(--font-body)", color: "var(--color-text)" }}
       style={{
         background: "var(--color-login-bg)",
         fontFamily: "var(--font-body)",
@@ -466,14 +466,14 @@ function InnerShell({ children }: { children: ReactNode }) {
             {!isAskPage && (
               <Link
                 to="/app/parser"
-                className="hidden items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold text-white sm:flex"
+                className="flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white"
                 style={{
                   background: "var(--color-accent)",
                   boxShadow: "var(--shadow-accent)",
                 }}
               >
-                <Upload size={14} strokeWidth={2} />
-                Upload statement
+                <Sparkles size={14} strokeWidth={2} />
+                Ask Wab
               </Link>
             )}
 
