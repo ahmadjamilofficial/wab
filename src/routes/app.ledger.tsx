@@ -782,9 +782,9 @@ function ImportPanel({
     try {
       const results: (TransactionInput & { _raw?: string })[] = [];
       const spreadsheetFiles = files.filter((file) =>
-        /\\.(csv|xlsx|xls)$/i.test(file.name),
+        /\.(csv|xlsx|xls)$/i.test(file.name),
       );
-      const textFiles = files.filter((file) => !/\\.(csv|xlsx|xls)$/i.test(file.name));
+      const textFiles = files.filter((file) => !/\.(csv|xlsx|xls)$/i.test(file.name));
 
       // CSV and Excel imports are deterministic: no AI provider/key/quota is
       // required to turn a spreadsheet with headers into ledger rows.
@@ -803,14 +803,14 @@ function ImportPanel({
           exchange: ["exchange", "market"],
         };
         const numberValue = (value: unknown): number => {
-          const cleaned = String(value ?? "").replace(/[,\\s]/g, "").replace(/[^0-9.\\-]/g, "");
+          const cleaned = String(value ?? "").replace(/[,\s]/g, "").replace(/[^0-9.\-]/g, "");
           const parsed = Number(cleaned);
           return Number.isFinite(parsed) ? parsed : 0;
         };
         const dateValue = (value: unknown): string => {
           if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
           const raw = String(value ?? "").trim();
-          if (/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) return raw;
+          if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
           const parsed = new Date(raw);
           return Number.isNaN(parsed.getTime()) ? new Date().toISOString().slice(0, 10) : parsed.toISOString().slice(0, 10);
         };
@@ -828,7 +828,7 @@ function ImportPanel({
             for (const source of rows) {
               const normalized = new Map(
                 Object.entries(source).map(([key, value]) => [
-                  key.toLowerCase().replace(/[_\\-]+/g, " ").trim(),
+                  key.toLowerCase().replace(/[_\-]+/g, " ").trim(),
                   value,
                 ]),
               );
@@ -874,9 +874,9 @@ function ImportPanel({
           const raw = await complete({
             systemPrompt:
               "You extract brokerage transactions. Reply with ONLY a JSON array, no prose.",
-            userPrompt: `Extract ALL transactions from this financial document as a JSON array. Each object must have: ticker, action (BUY/SELL/DIV), quantity, price, fees, wht, trade_date (YYYY-MM-DD), ref_id, broker, exchange.\\n\\n${content.slice(0, 50000)}`,
+            userPrompt: `Extract ALL transactions from this financial document as a JSON array. Each object must have: ticker, action (BUY/SELL/DIV), quantity, price, fees, wht, trade_date (YYYY-MM-DD), ref_id, broker, exchange.\n\n${content.slice(0, 50000)}`,
           });
-          const clean = raw.replace(/\`\`\`[a-z]*\\n?/g, "").replace(/\`\`\`/g, "").trim();
+          const clean = raw.replace(/\`\`\`[a-z]*\n?/g, "").replace(/\`\`\`/g, "").trim();
           let rows: unknown[] = [];
           try {
             rows = JSON.parse(clean) as unknown[];
