@@ -20,7 +20,6 @@ import {
   FileText,
   Loader2,
   Plus,
-  Sparkles,
   Trash2,
   X,
   Zap,
