@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   BookOpen,
@@ -20,7 +21,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StatusPill } from "@/components/kit";
 import { useAuth } from "@/lib/auth-context";
@@ -1281,6 +1282,23 @@ function Ledger() {
   const [actionFilter, setActionFilter] = useState<TxAction | "ALL">("ALL");
   const [statusFilter, setStatusFilter] = useState<"all" | "posted" | "needs_review">("all");
   const [rowMenu, setRowMenu] = useState<string | null>(null);
+  const [rowMenuPosition, setRowMenuPosition] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!rowMenu) return;
+    const closeMenu = () => {
+      setRowMenu(null);
+      setRowMenuPosition(null);
+    };
+    // The table scroll container can move independently of the viewport.
+    // Close the portaled menu rather than leave it detached from its row.
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("resize", closeMenu);
+    return () => {
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("resize", closeMenu);
+    };
+  }, [rowMenu]);
 
   // Modal state
   const [addOpen, setAddOpen] = useState(false);
@@ -1755,53 +1773,85 @@ function Ledger() {
                     <td className="relative px-3 py-3">
                       <button
                         type="button"
-                        onClick={() => setRowMenu(rowMenu === tx.id ? null : tx.id)}
+                        onClick={(event) => {
+                          if (rowMenu === tx.id) {
+                            setRowMenu(null);
+                            setRowMenuPosition(null);
+                            return;
+                          }
+                          const rect = event.currentTarget.getBoundingClientRect();
+                          const menuHeight = 88;
+                          const top =
+                            rect.bottom + menuHeight + 6 > window.innerHeight
+                              ? Math.max(8, rect.top - menuHeight - 6)
+                              : rect.bottom + 6;
+                          const left = Math.max(
+                            8,
+                            Math.min(rect.right - 144, window.innerWidth - 152),
+                          );
+                          setRowMenuPosition({ top, left });
+                          setRowMenu(tx.id);
+                        }}
                         className="rounded-lg p-1.5 transition-colors hover:bg-surface-hover"
                         aria-label="Row actions"
+                        aria-expanded={rowMenu === tx.id}
                       >
                         <MoreHorizontal size={16} strokeWidth={1.75} />
                       </button>
 
-                      <AnimatePresence>
-                        {rowMenu === tx.id && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                            transition={{ duration: 0.12 }}
-                            className="absolute right-3 top-full z-20 mt-1 w-36 overflow-hidden rounded-xl shadow-lg"
-                            style={{ border: "1px solid var(--hairline)", background: "var(--surface)" }}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditRow(tx);
-                                setRowMenu(null);
+                      {rowMenu === tx.id &&
+                        rowMenuPosition &&
+                        createPortal(
+                          <AnimatePresence>
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                              transition={{ duration: 0.12 }}
+                              className="fixed z-[100] w-36 overflow-hidden rounded-xl shadow-lg"
+                              style={{
+                                top: rowMenuPosition.top,
+                                left: rowMenuPosition.left,
+                                border: "1px solid var(--hairline)",
+                                background: "var(--surface)",
                               }}
-                              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-surface-hover"
+                              role="menu"
                             >
-                              <Edit2
-                                size={13}
-                                strokeWidth={1.75}
-                                style={{ color: "var(--color-accent)" }}
-                              />
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setDeleteRow(tx);
-                                setRowMenu(null);
-                              }}
-                              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-surface-hover"
-                              style={{ color: "var(--bad)" }}
-                            >
-                              <Trash2 size={13} strokeWidth={1.75} />
-                              Delete
-                            </button>
-                          </motion.div>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setEditRow(tx);
+                                  setRowMenu(null);
+                                  setRowMenuPosition(null);
+                                }}
+                                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-surface-hover"
+                              >
+                                <Edit2
+                                  size={13}
+                                  strokeWidth={1.75}
+                                  style={{ color: "var(--color-accent)" }}
+                                />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setDeleteRow(tx);
+                                  setRowMenu(null);
+                                  setRowMenuPosition(null);
+                                }}
+                                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-surface-hover"
+                                style={{ color: "var(--bad)" }}
+                              >
+                                <Trash2 size={13} strokeWidth={1.75} />
+                                Delete
+                              </button>
+                            </motion.div>
+                          </AnimatePresence>,
+                          document.body,
                         )}
-                      </AnimatePresence>
                     </td>
                   </motion.tr>
                 ))}
