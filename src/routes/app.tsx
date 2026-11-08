@@ -34,12 +34,12 @@ function AppLayout() {
 
   if (!session) return null;
 
-  if (!loading && !profile && profileError) {
+  if (!loading && !profile) {
     return (
       <div className="flex min-h-screen items-center justify-center px-5 py-10">
         <div className="w-full max-w-md rounded-2xl border bg-background p-6 text-center shadow-sm">
           <h1 className="text-lg font-semibold">Your workspace needs setup</h1>
-          <p className="mt-2 break-words text-sm text-muted-foreground">{profileError}</p>
+          <p className="mt-2 break-words text-sm text-muted-foreground">{profileError ?? "Your account is signed in, but its workspace profile has not loaded yet. Retry setup to continue."}</p>
           <button
             type="button"
             onClick={() => void refreshProfile()}
