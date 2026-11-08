@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { MessageSquare, PanelLeftClose, PanelLeftOpen, Plus, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
@@ -24,10 +24,14 @@ export function ChatSidebar({ activeId }: { activeId: string }) {
   const { data: threads = [], isLoading } = useChatThreads(user?.id);
   const del = useDeleteChatThread();
   const [open, setOpen] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
 
   const groups = useMemo(() => {
+    // Relative labels depend on the current clock; avoid SSR/client hydration drift.
+    if (!mounted) return [];
     const q = query.trim().toLowerCase();
     const out = new Map<string, typeof threads>();
     for (const t of threads) {
@@ -36,7 +40,7 @@ export function ChatSidebar({ activeId }: { activeId: string }) {
       out.set(k, [...(out.get(k) ?? []), t]);
     }
     return [...out.entries()];
-  }, [threads, query]);
+  }, [threads, query, mounted]);
 
   async function newChat() {
     if (!user || creating) return;
