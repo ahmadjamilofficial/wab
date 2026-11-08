@@ -1,4 +1,4 @@
-import { FileText, Loader2, Paperclip, Upload, X } from "lucide-react";
+import { FileText, Paperclip, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import type { AgentAttachment } from "@/lib/agent-service";
 
@@ -82,8 +82,11 @@ export function ChatComposer({
   return (
     <div className="mx-auto w-full max-w-[720px] text-left">
       <div
-        className="relative overflow-hidden rounded-[24px] bg-surface"
-        style={{ border: `1.5px solid ${dragging ? "var(--color-accent)" : "var(--accent-10)"}` }}
+        className="relative overflow-hidden rounded-[28px] bg-surface transition-[box-shadow,border-color] duration-200 focus-within:shadow-[var(--shadow-hover)]"
+        style={{
+          border: `1px solid ${dragging ? "var(--color-accent)" : "var(--hairline-strong)"}`,
+          boxShadow: "var(--shadow-card)",
+        }}
         onDragEnter={(e) => {
           if (!e.dataTransfer.types.includes("Files")) return;
           e.preventDefault();
@@ -125,7 +128,7 @@ export function ChatComposer({
           </div>
         )}
 
-        <div className="px-5 pt-4 pb-2">
+        <div className="px-5 pt-4 pb-1">
           <textarea
             rows={2}
             value={value}
@@ -142,17 +145,14 @@ export function ChatComposer({
           />
         </div>
 
-        <div
-          className="flex items-center justify-between gap-3 px-4 py-3"
-          style={{ borderTop: "1px solid var(--accent-6)" }}
-        >
+        <div className="flex items-center justify-between gap-3 px-3 pb-3 pt-1">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               aria-label="Attach files"
               onClick={() => inputRef.current?.click()}
-              className="flex size-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-surface-hover"
-              style={{ color: "var(--ink-3)" }}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full transition-[background-color,transform] duration-150 hover:bg-[var(--accent-8)] active:scale-95"
+              style={{ color: "var(--ink-2)" }}
             >
               <Paperclip size={17} strokeWidth={1.75} />
             </button>
@@ -161,27 +161,24 @@ export function ChatComposer({
             </span>
           </div>
 
+          {/* Static send arrow — no spinner; it simply rests dimmed while busy. */}
           <button
             type="button"
             aria-label="Send"
             disabled={!canSend}
             onClick={onSubmit}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-40"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full text-white transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-90 disabled:opacity-30"
             style={{ background: "var(--color-accent)" }}
           >
-            {busy ? (
-              <Loader2 size={16} strokeWidth={2} className="animate-spin" />
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path
-                  d="M8 13V3M8 3L3.5 7.5M8 3l4.5 4.5"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden>
+              <path
+                d="M8 13V3M8 3L3.5 7.5M8 3l4.5 4.5"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         </div>
 

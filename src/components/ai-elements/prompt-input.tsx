@@ -29,13 +29,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
 import {
+  ArrowUpIcon,
   CheckCircle2Icon,
-  CornerDownLeftIcon,
   ImageIcon,
   Monitor,
   PlusIcon,
@@ -1198,12 +1197,12 @@ export const PromptInputSubmit = ({
 }: PromptInputSubmitProps) => {
   const isGenerating = status === "submitted" || status === "streaming";
 
-  let Icon = <CornerDownLeftIcon className="size-4" />;
+  // Send arrow when idle; a stop square the moment a request is in flight.
+  // No spinner — the stop button is the only "busy" signal.
+  let Icon = <ArrowUpIcon className="size-[18px]" strokeWidth={2.25} />;
 
-  if (status === "submitted") {
-    Icon = <Spinner />;
-  } else if (status === "streaming") {
-    Icon = <SquareIcon className="size-4" />;
+  if (isGenerating) {
+    Icon = <SquareIcon className="size-3.5" fill="currentColor" strokeWidth={0} />;
   } else if (status === "error") {
     Icon = <XIcon className="size-4" />;
   }
@@ -1222,8 +1221,12 @@ export const PromptInputSubmit = ({
 
   return (
     <InputGroupButton
-      aria-label={isGenerating ? "Stop" : "Submit"}
-      className={cn(className)}
+      aria-label={isGenerating ? "Stop generating" : "Send message"}
+      className={cn(
+        "wab-send size-9 rounded-full transition-[opacity,transform,background-color] duration-150 ease-out hover:opacity-90 active:scale-90",
+        className,
+      )}
+      data-generating={isGenerating ? "true" : "false"}
       onClick={handleClick}
       size={size}
       type={isGenerating && onStop ? "button" : "submit"}

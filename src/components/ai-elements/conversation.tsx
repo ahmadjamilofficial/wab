@@ -5,20 +5,54 @@ import { cn } from "@/lib/utils";
 import type { UIMessage } from "ai";
 import { ArrowDownIcon, DownloadIcon } from "lucide-react";
 import type { ComponentProps } from "react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
 export type ConversationProps = ComponentProps<typeof StickToBottom>;
 
+// Scroll feel: a thread opens already at the bottom (no long animated scroll
+// through history), then follows streamed content with a heavily damped spring
+// so growth glides instead of snapping or bouncing.
 export const Conversation = ({ className, ...props }: ConversationProps) => (
   <StickToBottom
     className={cn("relative flex-1 overflow-y-hidden", className)}
-    initial="smooth"
+    damping={0.8}
+    initial="instant"
+    mass={1}
     resize="smooth"
     role="log"
+    stiffness={0.07}
     {...props}
   />
 );
+
+/**
+ * Re-engages stick-to-bottom whenever the user sends a new message, so the
+ * transcript glides down to the new turn even if they had scrolled up.
+ */
+export const ConversationScrollOnSend = ({ messages }: { messages: UIMessage[] }) => {
+  const { scrollToBottom } = useStickToBottomContext();
+  const seen = useRef<{ ready: boolean; lastUserId: string | null }>({
+    ready: false,
+    lastUserId: null,
+  });
+
+  useEffect(() => {
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    const id = lastUser?.id ?? null;
+    if (!seen.current.ready) {
+      // Opening an existing thread: don't treat history as a new send.
+      seen.current = { ready: true, lastUserId: id };
+      return;
+    }
+    if (id && id !== seen.current.lastUserId) {
+      seen.current.lastUserId = id;
+      void scrollToBottom();
+    }
+  }, [messages, scrollToBottom]);
+
+  return null;
+};
 
 export type ConversationContentProps = ComponentProps<typeof StickToBottom.Content>;
 
@@ -78,8 +112,10 @@ export const ConversationScrollButton = ({
   return (
     !isAtBottom && (
       <Button
+        aria-label="Scroll to latest message"
         className={cn(
-          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full dark:bg-background dark:hover:bg-muted",
+          "absolute bottom-4 left-[50%] size-9 translate-x-[-50%] rounded-full border-[var(--hairline-strong)] bg-surface shadow-[var(--shadow-card)] transition-[transform,box-shadow] duration-150 hover:bg-surface hover:shadow-[var(--shadow-hover)] active:scale-95",
+          "animate-in fade-in zoom-in-90 duration-200",
           className,
         )}
         onClick={handleScrollToBottom}

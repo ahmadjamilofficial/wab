@@ -12,17 +12,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowUpRight,
-  Bot,
   Check,
   ChevronDown,
+  Circle,
   Clock,
   Download,
   FileText,
   Loader2,
-  Paperclip,
-  Shield,
+  Plus,
   Sparkles,
-  Terminal,
   Trash2,
   X,
   Zap,
@@ -35,6 +33,7 @@ import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
+  ConversationScrollOnSend,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
@@ -57,10 +56,7 @@ import { loadComposerDraft, saveComposerDraft, clearComposerDraft } from "@/lib/
 // ── Suggestion chips ──────────────────────────────────────────────────────────
 
 const SUGGESTIONS_BY_PLAN: Record<string, string[]> = {
-  free: [
-    "What is my realised capital gain this tax year?",
-    "Show my latest ledger totals",
-  ],
+  free: ["What is my realised capital gain this tax year?", "Show my latest ledger totals"],
   standard: [
     "Reconcile my last 10 trades and flag anything odd",
     "Extract this broker slip and post it to my ledger",
@@ -75,23 +71,6 @@ const SUGGESTIONS_BY_PLAN: Record<string, string[]> = {
     "Detect fee surcharges and WHT mismatches",
     "Analyse my portfolio concentration and risk",
   ],
-};
-
-// ── Progress stage labels ─────────────────────────────────────────────────────
-
-const STAGE_META: Record<
-  string,
-  {
-    icon: React.FC<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }>;
-    color: string;
-  }
-> = {
-  "Understanding your task": { icon: Sparkles, color: "var(--color-accent)" },
-  "Extracting financial data": { icon: Bot, color: "var(--info)" },
-  "Running reconciliation": { icon: Shield, color: "var(--warn)" },
-  "Verifying evidence": { icon: Check, color: "var(--ok)" },
-  "Checking calculations": { icon: Terminal, color: "var(--color-accent)" },
-  "Preparing findings": { icon: Sparkles, color: "var(--ok)" },
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -290,56 +269,6 @@ function ErrorBanner({
         </div>
       </div>
     </motion.div>
-  );
-}
-
-// ── Progress bar ──────────────────────────────────────────────────────────────
-
-function AgentProgressBar({ stage, visible }: { stage: string | null; visible: boolean }) {
-  const meta = stage ? STAGE_META[stage] : null;
-  const Icon = meta?.icon ?? Loader2;
-
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.25 }}
-          className="mx-auto mb-3 flex max-w-[48rem] items-center gap-3 rounded-2xl px-4 py-3"
-          style={{
-            background: "var(--accent-6)",
-            border: "1px solid var(--accent-14)",
-          }}
-        >
-          <span
-            className="flex size-7 shrink-0 items-center justify-center rounded-full"
-            style={{ background: "var(--accent-12)" }}
-          >
-            <Loader2
-              size={14}
-              strokeWidth={2}
-              className="animate-spin"
-              style={{ color: "var(--color-accent)" }}
-            />
-          </span>
-          <span className="flex-1 text-sm font-medium" style={{ color: "var(--color-text)" }}>
-            {stage ?? "Working…"}
-          </span>
-          {meta && (
-            <span className="text-xs" style={{ color: "var(--ink-3)" }}>
-              <Icon
-                size={12}
-                strokeWidth={2}
-                style={{ display: "inline", marginRight: 4, color: meta.color }}
-              />
-              {stage}
-            </span>
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
   );
 }
 
@@ -543,17 +472,18 @@ function ToolCard({
 
   return (
     <div
-      className="my-2 overflow-hidden rounded-xl"
+      className="my-1 overflow-hidden rounded-2xl transition-colors"
       style={{ border: "1px solid var(--hairline)" }}
     >
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium"
-        style={{ background: "var(--accent-3)" }}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium transition-colors hover:bg-[var(--accent-4)]"
       >
+        {/* Static status marker — no spinners or pulses while a tool runs. */}
         {running ? (
-          <Loader2 size={14} className="animate-spin" style={{ color: "var(--color-accent)" }} />
+          <Circle size={13} strokeWidth={2} style={{ color: "var(--ink-3)" }} />
         ) : isError ? (
           <X size={14} style={{ color: "var(--bad)" }} />
         ) : needsApproval ? (
@@ -562,33 +492,45 @@ function ToolCard({
           <Check size={14} style={{ color: "var(--ok)" }} />
         )}
         <span className="capitalize">{friendlyName}</span>
-        <span className="ml-auto" style={{ color: "var(--ink-3)" }}>
+        <span className="ml-auto text-xs font-normal" style={{ color: "var(--ink-3)" }}>
           {needsApproval ? "needs approval" : running ? "running" : isError ? "failed" : "done"}
         </span>
         {isDone && !isError && (
           <ChevronDown
-            size={12}
-            className="transition-transform"
+            size={13}
+            className="transition-transform duration-200 ease-out"
             style={{ transform: open ? "rotate(180deg)" : "none", color: "var(--ink-3)" }}
           />
         )}
       </button>
 
-      {open && (
-        <div className="space-y-2 px-3 py-2 text-[11px]" style={{ color: "var(--ink-2)" }}>
-          {part.input != null && (
-            <pre className="overflow-x-auto rounded-lg p-2 whitespace-pre-wrap break-words" style={{ background: "var(--accent-6)" }}>
-              {JSON.stringify(part.input, null, 2)}
-            </pre>
-          )}
-          {part.output !== undefined && (
-            <pre className="overflow-x-auto rounded-lg p-2 whitespace-pre-wrap break-words" style={{ background: "var(--accent-6)" }}>
-              {JSON.stringify(part.output, null, 2)}
-            </pre>
-          )}
-          {isError && <p style={{ color: "var(--bad)" }}>{part.errorText}</p>}
+      {/* Height animates via grid-template-rows so the transcript never jumps. */}
+      <div
+        className="grid transition-[grid-template-rows] duration-200 ease-out"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="space-y-2 px-3.5 pb-3 pt-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
+            {part.input != null && (
+              <pre
+                className="overflow-x-auto rounded-xl p-2.5 whitespace-pre-wrap break-words"
+                style={{ background: "var(--accent-5)" }}
+              >
+                {JSON.stringify(part.input, null, 2)}
+              </pre>
+            )}
+            {part.output !== undefined && (
+              <pre
+                className="overflow-x-auto rounded-xl p-2.5 whitespace-pre-wrap break-words"
+                style={{ background: "var(--accent-5)" }}
+              >
+                {JSON.stringify(part.output, null, 2)}
+              </pre>
+            )}
+            {isError && <p style={{ color: "var(--bad)" }}>{part.errorText}</p>}
+          </div>
         </div>
-      )}
+      </div>
 
       {needsApproval && onApprove && (
         <div
@@ -605,7 +547,7 @@ function ToolCard({
           <button
             type="button"
             onClick={() => onApprove(false)}
-            className="rounded-full px-3 py-1.5 text-xs font-semibold"
+            className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--accent-6)]"
             style={{ border: "1px solid var(--hairline)" }}
           >
             Reject
@@ -613,7 +555,7 @@ function ToolCard({
           <button
             type="button"
             onClick={() => onApprove(true)}
-            className="rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+            className="rounded-full px-3.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
             style={{ background: "var(--color-accent)" }}
           >
             Approve
@@ -697,9 +639,11 @@ function AttachFilesButton() {
       type="button"
       onClick={() => attachments.openFileDialog()}
       title="Attach files"
-      className="flex size-8 items-center justify-center rounded-lg text-[color:var(--color-accent)] transition-colors hover:bg-[var(--accent-10)]"
+      aria-label="Attach files"
+      className="flex size-9 items-center justify-center rounded-full transition-colors duration-150 hover:bg-[var(--accent-8)] active:scale-95"
+      style={{ color: "var(--ink-2)" }}
     >
-      <Paperclip size={15} strokeWidth={1.75} />
+      <Plus size={19} strokeWidth={1.75} />
     </button>
   );
 }
@@ -710,27 +654,27 @@ function AttachedFileStrip() {
   if (!files || files.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 px-3 pt-3 pb-1">
+    <div data-has-attachments className="flex flex-wrap gap-2 px-4 pt-3.5 pb-0">
       {files.map((file) => (
         <div
           key={file.id}
-          className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium"
+          className="wab-pop-in flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium"
           style={{
-            background: "var(--accent-8)",
+            background: "var(--accent-5)",
             border: "1px solid var(--hairline)",
             color: "var(--color-text)",
           }}
         >
-          <FileText size={12} strokeWidth={1.75} style={{ color: "var(--color-accent)", flexShrink: 0 }} />
-          <span className="max-w-[160px] truncate">{file.filename ?? "Document"}</span>
+          <FileText size={13} strokeWidth={1.75} style={{ color: "var(--ink-2)", flexShrink: 0 }} />
+          <span className="max-w-[180px] truncate">{file.filename ?? "Document"}</span>
           <button
             type="button"
             onClick={() => attachments.remove(file.id)}
-            className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-surface-hover"
+            className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-[var(--accent-10)]"
             aria-label={`Remove ${file.filename}`}
             style={{ color: "var(--ink-3)" }}
           >
-            <X size={10} strokeWidth={2} />
+            <X size={11} strokeWidth={2} />
           </button>
         </div>
       ))}
@@ -760,23 +704,25 @@ function Chat({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, status, stop, error, addToolApprovalResponse } =
-    useChat({
-      id: threadId,
-      messages: initial,
-      transport,
-      throttle: 80,
-      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
-      onFinish: () => {
-        void queryClient.invalidateQueries({ queryKey: ["chat_threads", user?.id] });
-      },
-      onError: (cause) => {
-        // Don't show a generic toast — the ErrorBanner in the UI handles it
-        console.error("[Wab] Chat error", cause);
-      },
-    });
+  // Messages that existed when the thread opened never animate in; only new
+  // turns get the entrance transition (history shouldn't "pop" on load).
+  const initialCount = useRef(initial.length);
 
-  const [currentStage, setCurrentStage] = useState<string | null>(null);
+  const { messages, sendMessage, status, stop, error, addToolApprovalResponse } = useChat({
+    id: threadId,
+    messages: initial,
+    transport,
+    // ~25fps flush keeps streamed text flowing smoothly instead of in chunks.
+    throttle: 40,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    onFinish: () => {
+      void queryClient.invalidateQueries({ queryKey: ["chat_threads", user?.id] });
+    },
+    onError: (cause) => {
+      // Don't show a generic toast — the ErrorBanner in the UI handles it
+      console.error("[Wab] Chat error", cause);
+    },
+  });
 
   // ── Pending prompt from landing composer ──────────────────────────────────
   useEffect(() => {
@@ -805,10 +751,7 @@ function Chat({
   }, []);
 
   useEffect(() => {
-    if (status === "ready") {
-      setCurrentStage(null);
-      textareaRef.current?.focus();
-    }
+    if (status === "ready") textareaRef.current?.focus();
   }, [status]);
 
   // Restore the unsent draft after reload so typed text survives navigation.
@@ -818,35 +761,6 @@ function Chat({
     const draft = loadComposerDraft(threadId);
     if (draft && !ta.value) ta.value = draft;
   }, [threadId]);
-
-  useEffect(() => {
-    if (status !== "streaming") {
-      setCurrentStage((prev) => (prev == null ? prev : null));
-      return;
-    }
-    const lastMsg = [...messages].reverse().find((m) => m.role === "assistant");
-    if (!lastMsg) return;
-    let nextStage: string | null = null;
-    for (const part of [...(lastMsg.parts ?? [])].reverse()) {
-      const tp = part as unknown as ToolPart;
-      const name = tp.toolName ?? tp.type?.replace(/^tool-/, "");
-      if (name === "report_progress" && tp.output) {
-        const out = tp.output as Record<string, unknown>;
-        if (typeof out["stage"] === "string") {
-          nextStage = out["stage"];
-          break;
-        }
-      }
-      if (name === "plan_task" && tp.state === "input-available" && tp.input) {
-        const inp = tp.input as Record<string, unknown>;
-        if (typeof inp["public_stage"] === "string") {
-          nextStage = inp["public_stage"];
-          break;
-        }
-      }
-    }
-    setCurrentStage((prev) => (prev === nextStage ? prev : nextStage));
-  }, [messages, status]);
 
   async function handleDeleteChat() {
     if (!user?.id) return;
@@ -870,34 +784,28 @@ function Chat({
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {/* ── Messages ─────────────────────────────────────────────────────── */}
       <Conversation className="min-h-0 flex-1">
-        <ConversationContent className="mx-auto w-full max-w-[48rem] px-4 pb-8 pt-8 sm:px-5 sm:pt-10">
+        <ConversationScrollOnSend messages={messages} />
+        <ConversationContent className="mx-auto w-full max-w-[48rem] gap-8 px-4 pb-10 pt-6 sm:px-5 sm:pt-10">
           {empty && (
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="flex min-h-[52vh] flex-col items-center justify-center text-center"
-            >
-              <div
-                className="mb-5 flex size-14 items-center justify-center rounded-2xl"
-                style={{ background: "var(--accent-10)" }}
+            <div className="wab-fade-up flex min-h-[48vh] flex-col items-center justify-center text-center">
+              <h1
+                className="text-balance"
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "clamp(1.6rem,3.4vw,2.2rem)",
+                  lineHeight: 1.15,
+                }}
               >
-                <Sparkles size={26} strokeWidth={1.5} style={{ color: "var(--color-accent)" }} />
-              </div>
-              <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.4rem,3vw,2rem)" }}>
                 Ask Wab a question about your data
               </h1>
               <p
-                className="mt-3 max-w-lg text-sm leading-relaxed"
+                className="mt-3 max-w-md text-balance text-[15px] leading-relaxed"
                 style={{ color: "var(--ink-2)" }}
               >
-                Wab works autonomously in the background. Use this chat to ask questions,
-                investigate anomalies, or request a specific analysis.
+                Investigate anomalies, reconcile trades, or drop in a broker statement, PDF or
+                spreadsheet to get started.
               </p>
-              <p className="mt-4 text-xs" style={{ color: "var(--ink-3)" }}>
-                You can also drag &amp; drop a broker statement, PDF, or spreadsheet directly into the chat.
-              </p>
-            </motion.div>
+            </div>
           )}
 
           {messages.map((message, messageIndex) => {
@@ -909,57 +817,61 @@ function Chat({
               !assistantHasWrittenText(message.parts)
                 ? narrateAssistantTools(message.parts)
                 : "";
+            // Only turns created after the thread opened get the entrance motion.
+            const isNewTurn = messageIndex >= initialCount.current;
             return (
-            <Message key={message.id} from={message.role}>
-              <MessageContent>
-                {message.parts.map((part, index) => {
-                  const partKey =
-                    ("toolCallId" in part && typeof part.toolCallId === "string" && part.toolCallId) ||
-                    `${message.id}-${part.type}-${index}`;
-                  if (part.type === "text")
-                    return (
-                      <MessageResponse key={partKey} isAnimating={isStreaming && isLastAssistant}>
-                        {part.text}
-                      </MessageResponse>
-                    );
+              <Message
+                key={message.id}
+                from={message.role}
+                className={isNewTurn ? "wab-msg-in" : undefined}
+              >
+                <MessageContent>
+                  {message.parts.map((part, index) => {
+                    const partKey =
+                      ("toolCallId" in part &&
+                        typeof part.toolCallId === "string" &&
+                        part.toolCallId) ||
+                      `${message.id}-${part.type}-${index}`;
+                    if (part.type === "text")
+                      return (
+                        <MessageResponse key={partKey} isAnimating={isStreaming && isLastAssistant}>
+                          {part.text}
+                        </MessageResponse>
+                      );
 
-                  if (part.type === "file")
-                    return (
-                      <div
-                        key={partKey}
-                        className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs"
-                        style={{ borderColor: "var(--hairline)" }}
-                      >
-                        📎 {("filename" in part && part.filename) || "Attached document"}
-                      </div>
-                    );
+                    if (part.type === "file")
+                      return (
+                        <div
+                          key={partKey}
+                          className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs"
+                          style={{ borderColor: "var(--hairline)" }}
+                        >
+                          📎 {("filename" in part && part.filename) || "Attached document"}
+                        </div>
+                      );
 
-                  if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
-                    const tp = part as unknown as ToolPart;
-                    const approvalId = tp.approval?.id;
-                    return (
-                      <ToolCard
-                        key={partKey}
-                        part={tp}
-                        onApprove={
-                          approvalId
-                            ? (approved) => addToolApprovalResponse({ id: approvalId, approved })
-                            : undefined
-                        }
-                      />
-                    );
-                  }
-                  return null;
-                })}
-                {fallbackText ? <MessageResponse>{fallbackText}</MessageResponse> : null}
-              </MessageContent>
-            </Message>
+                    if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
+                      const tp = part as unknown as ToolPart;
+                      const approvalId = tp.approval?.id;
+                      return (
+                        <ToolCard
+                          key={partKey}
+                          part={tp}
+                          onApprove={
+                            approvalId
+                              ? (approved) => addToolApprovalResponse({ id: approvalId, approved })
+                              : undefined
+                          }
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+                  {fallbackText ? <MessageResponse>{fallbackText}</MessageResponse> : null}
+                </MessageContent>
+              </Message>
             );
           })}
-
-          {status === "submitted" && (
-            <Shimmer>Reading your ledger and planning next steps…</Shimmer>
-          )}
 
           {/* Quota / provider / timeout error banners */}
           {error && (
@@ -981,18 +893,16 @@ function Chat({
       </Conversation>
 
       {/* ── Composer area ─────────────────────────────────────────────────── */}
-      <div className="px-3 pb-4 pt-1 sm:px-4 sm:pb-5">
+      <div className="wab-composer-area relative px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
         <div className="mx-auto w-full max-w-[48rem]">
-          <AgentProgressBar stage={currentStage} visible={isStreaming} />
-
           {empty && (
-            <div className="mb-3 flex flex-wrap justify-center gap-2">
+            <div className="wab-fade-up mb-3 flex flex-wrap justify-center gap-2">
               {(SUGGESTIONS_BY_PLAN[plan] ?? SUGGESTIONS_BY_PLAN["free"] ?? []).map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => void sendMessage({ text: s })}
-                  className="rounded-full bg-surface px-3 py-1.5 text-xs transition-all hover:shadow-md"
+                  className="rounded-full px-3.5 py-2 text-[13px] transition-[background-color,transform] duration-150 hover:bg-[var(--accent-6)] active:scale-[0.98]"
                   style={{ border: "1px solid var(--hairline)", color: "var(--ink-2)" }}
                 >
                   {s}
@@ -1001,21 +911,8 @@ function Chat({
             </div>
           )}
 
-          {isStreaming && (
-            <div className="mb-2 flex justify-end">
-              <button
-                type="button"
-                onClick={stop}
-                className="rounded-full border px-3 py-1 text-xs font-medium transition-shadow hover:shadow-sm"
-                style={{ borderColor: "var(--hairline)", color: "var(--bad)" }}
-              >
-                Stop generating
-              </button>
-            </div>
-          )}
-
           <PromptInput
-            className="[&_[data-slot=input-group]]:rounded-[28px] [&_[data-slot=input-group]]:bg-surface [&_[data-slot=input-group]]:shadow-[var(--shadow-card)]"
+            className="wab-composer"
             accept=".pdf,.png,.jpg,.jpeg,.webp,.csv,.xlsx,.xls,.txt,application/pdf,image/png,image/jpeg,image/webp,text/csv,text/plain"
             multiple
             globalDrop
@@ -1024,6 +921,10 @@ function Chat({
               const trimmed = (text ?? "").trim();
               if (!trimmed && (!files || files.length === 0)) return;
               clearComposerDraft(threadId);
+              // Collapse the box back to one line as soon as the message leaves.
+              requestAnimationFrame(() => {
+                if (textareaRef.current) textareaRef.current.style.height = "";
+              });
               await sendMessage({
                 text: trimmed || "Read the attached file(s) and use them as context.",
                 files,
@@ -1035,16 +936,16 @@ function Chat({
               ref={textareaRef}
               autoFocus
               placeholder="Ask Wab a question about your data…"
-              className="min-h-[52px] px-4 text-[15px] leading-6"
+              className="max-h-[200px] min-h-[56px] px-5 pt-4 text-base leading-6 placeholder:text-[color:var(--ink-3)]"
               onChange={(e) => {
-                // Auto-grow
+                // Auto-grow (field-sizing covers modern browsers; this covers the rest)
                 const el = e.currentTarget;
                 el.style.height = "auto";
-                el.style.height = `${Math.min(el.scrollHeight, 260)}px`;
+                el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
                 saveComposerDraft(threadId, el.value);
               }}
             />
-            <PromptInputFooter>
+            <PromptInputFooter className="px-3 pb-3 pt-1">
               <PromptInputTools>
                 <AttachFilesButton />
               </PromptInputTools>

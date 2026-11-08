@@ -21,7 +21,9 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
       "group flex w-full flex-col gap-2",
-      from === "user" ? "is-user ml-auto max-w-[70%] justify-end" : "is-assistant max-w-full",
+      from === "user"
+        ? "is-user ml-auto max-w-[88%] justify-end sm:max-w-[80%]"
+        : "is-assistant max-w-full",
       className,
     )}
     {...props}
@@ -33,9 +35,10 @@ export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
 export const MessageContent = ({ children, className, ...props }: MessageContentProps) => (
   <div
     className={cn(
-      "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-[15px] leading-7",
-      "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
-      "group-[.is-assistant]:text-foreground",
+      "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-[15px] leading-7 sm:text-base",
+      // User turns: soft rounded bubble. Assistant turns: open text, no bubble.
+      "group-[.is-user]:ml-auto group-[.is-user]:whitespace-pre-wrap group-[.is-user]:rounded-3xl group-[.is-user]:bg-[var(--accent-8)] group-[.is-user]:px-5 group-[.is-user]:py-2.5 group-[.is-user]:text-foreground",
+      "group-[.is-assistant]:w-full group-[.is-assistant]:text-foreground",
       className,
     )}
     {...props}

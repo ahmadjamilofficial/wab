@@ -113,8 +113,7 @@ export function ChatSidebar({ activeId }: { activeId: string }) {
           type="button"
           onClick={newChat}
           disabled={creating}
-          className="flex flex-1 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
-          style={{ borderColor: "var(--hairline)" }}
+          className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-150 hover:bg-[var(--accent-6)] active:scale-[0.99] disabled:opacity-60"
         >
           <Plus size={15} /> New chat
         </button>
@@ -129,8 +128,8 @@ export function ChatSidebar({ activeId }: { activeId: string }) {
       </div>
       <div className="px-3 pb-2">
         <div
-          className="flex items-center gap-2 rounded-lg border px-2.5 py-1.5"
-          style={{ borderColor: "var(--hairline)" }}
+          className="flex items-center gap-2 rounded-xl px-3 py-2 transition-colors duration-150 focus-within:bg-[var(--accent-6)]"
+          style={{ background: "var(--accent-4)" }}
         >
           <Search size={13} className="text-muted-foreground" />
           <input
@@ -154,12 +153,12 @@ export function ChatSidebar({ activeId }: { activeId: string }) {
             {items.map((t) => (
               <div
                 key={t.id}
-                className={`group flex items-center rounded-lg ${t.id === activeId ? "bg-muted" : "hover:bg-muted/60"}`}
+                className={`group flex items-center rounded-xl transition-colors duration-150 ${t.id === activeId ? "bg-[var(--accent-8)]" : "hover:bg-[var(--accent-5)]"}`}
               >
                 <Link
                   to="/app/parser/$threadId"
                   params={{ threadId: t.id }}
-                  className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-sm"
+                  className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-sm"
                 >
                   <MessageSquare size={13} className="shrink-0 text-muted-foreground" />
                   <span className="truncate">{t.title || "New chat"}</span>
