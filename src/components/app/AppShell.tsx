@@ -153,91 +153,12 @@ function NavItem({
   );
 }
 
-function LanguageMenu() {
-  const { locale, setLocale, t } = useLocale();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative lg:hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={t("changeLanguage")}
-        className="inline-flex max-w-[46vw] items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold"
-        style={{
-          color: "var(--ink-2)",
-          border: "1px solid var(--sidebar-border)",
-          background: "var(--surface)",
-        }}
-      >
-        <Languages size={14} strokeWidth={1.75} />
-        <span className="truncate">{t("changeLanguage")}</span>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ duration: 0.14 }}
-            className="absolute end-0 top-[calc(100%+8px)] z-50 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-2xl p-1.5"
-            style={{
-              border: "1px solid var(--sidebar-border)",
-              background: "var(--sidebar)",
-              boxShadow: "var(--shadow-hover)",
-            }}
-          >
-            <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--ink-3)" }}>
-              {t("language")}
-            </p>
-            <div className="max-h-72 overflow-y-auto">
-              {LOCALES.map((item) => (
-                <button
-                  key={item.code}
-                  type="button"
-                  onClick={() => {
-                    setLocale(item.code as LocaleCode);
-                    setOpen(false);
-                  }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm"
-                  style={{
-                    background: locale === item.code ? "var(--sidebar-accent)" : "transparent",
-                    color: "var(--sidebar-foreground)",
-                  }}
-                >
-                  <span>
-                    <span className="font-medium">{item.native}</span>
-                    <span className="ms-2 text-xs" style={{ color: "var(--ink-3)" }}>
-                      {item.label}
-                    </span>
-                  </span>
-                  {locale === item.code && <Check size={14} strokeWidth={2} />}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 function InnerShell({ children }: { children: ReactNode }) {
   const { user, profile, signOut } = useAuth();
   const nav = useNavigate();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const { setTheme, actualTheme } = useTheme();
-  const { t } = useLocale();
 
   const [expanded, setExpanded] = useState(() => readSidebarPref());
   const [moreOpen, setMoreOpen] = useState(false);
@@ -288,7 +209,7 @@ function InnerShell({ children }: { children: ReactNode }) {
             {collapsed ? (
               <button
                 type="button"
-                aria-label={t("expandNav")}
+                aria-label="Expand navigation"
                 onClick={() => (onClose ? onClose() : setExpanded(true))}
                 className="flex size-9 items-center justify-center rounded-xl transition-colors hover:bg-surface-hover"
                 style={{ background: "var(--sidebar)", border: "1px solid var(--sidebar-border)" }}
@@ -302,10 +223,10 @@ function InnerShell({ children }: { children: ReactNode }) {
                 </Link>
                 <button
                   type="button"
-                  aria-label={t("collapseNav")}
+                  aria-label="Collapse navigation"
                   onClick={() => setExpanded(false)}
                   className="flex size-8 items-center justify-center rounded-xl transition-colors hover:bg-surface-hover"
-                  title={t("collapseNav")}
+                  title="Collapse sidebar"
                 >
                   <PanelLeft size={16} strokeWidth={1.75} style={{ color: "var(--ink-3)" }} />
                 </button>
@@ -321,7 +242,7 @@ function InnerShell({ children }: { children: ReactNode }) {
               <div className="min-w-0">
                 <p className="truncate font-semibold">{orgName}</p>
                 <p style={{ color: "var(--ink-3)" }}>
-                  {(plan === "free" ? t("basic") : plan).toUpperCase()} {t("plan")}
+                  {plan.toUpperCase()} plan
                 </p>
               </div>
               <ChevronDown size={14} strokeWidth={1.75} style={{ color: "var(--ink-3)" }} />
@@ -335,7 +256,7 @@ function InnerShell({ children }: { children: ReactNode }) {
           }`}
         >
           <NavItem
-            label={t(primaryItem.labelKey)}
+            label={primaryItem.label}
             icon={primaryItem.icon}
             to={primaryItem.to}
             collapsed={collapsed}
@@ -346,7 +267,7 @@ function InnerShell({ children }: { children: ReactNode }) {
 
           {navGroups.map((group) => (
             <div
-              key={group.titleKey}
+              key={group.title}
               className={collapsed ? "flex flex-col items-center gap-1" : "space-y-0.5"}
             >
               {!collapsed && (
@@ -354,7 +275,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                   className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider"
                   style={{ color: "var(--sidebar-primary)", opacity: 0.45 }}
                 >
-                  {t(group.titleKey)}
+                  {group.title}
                 </p>
               )}
               {collapsed && (
@@ -362,8 +283,8 @@ function InnerShell({ children }: { children: ReactNode }) {
               )}
               {group.items.map((item) => (
                 <NavItem
-                  key={item.labelKey}
-                  label={t(item.labelKey)}
+                  key={item.label}
+                  label={item.label}
                   icon={item.icon}
                   to={item.to}
                   collapsed={collapsed}
@@ -468,7 +389,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <User size={16} strokeWidth={1.75} />
-                  {t("accountSettings")}
+                  Account settings
                 </Link>
                 <button
                   type="button"
@@ -479,7 +400,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <LogOut size={16} strokeWidth={1.75} />
-                  {t("signOut")}
+                  Sign out
                 </button>
               </motion.div>
             )}
@@ -508,9 +429,9 @@ function InnerShell({ children }: { children: ReactNode }) {
         {!expanded && (
           <button
             type="button"
-            aria-label={t("expandNav")}
+            aria-label="Expand navigation"
             onClick={() => setExpanded(true)}
-            title={t("expandNav")}
+            title="Expand sidebar"
             className="absolute right-0 top-1/2 z-10 flex size-5 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border shadow-sm transition-shadow hover:shadow-md"
             style={{ borderColor: "var(--sidebar-border)", background: "var(--sidebar)" }}
           >
@@ -528,7 +449,6 @@ function InnerShell({ children }: { children: ReactNode }) {
             <LogoMark size={22} />
           </div>
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-            <LanguageMenu />
             <button
               type="button"
               onClick={() => setTheme(actualTheme === "dark" ? "light" : "dark")}
@@ -553,7 +473,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                 }}
               >
                 <Upload size={14} strokeWidth={2} />
-                {t("uploadStatement")}
+                Upload statement
               </Link>
             )}
 
@@ -599,7 +519,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                 }}
               >
                 <Icon size={18} strokeWidth={active ? 2.1 : 1.7} />
-                <span className="max-w-full truncate">{t(tab.labelKey)}</span>
+                <span className="max-w-full truncate">{tab.label}</span>
                 {tab.to === "/app/review" && reviewBadge > 0 && (
                   <span
                     className="absolute end-2 top-1 flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
@@ -621,7 +541,7 @@ function InnerShell({ children }: { children: ReactNode }) {
             }}
           >
             <MoreHorizontal size={18} strokeWidth={moreOpen || !tabActive ? 2.1 : 1.7} />
-            <span className="max-w-full truncate">{t("more")}</span>
+            <span className="max-w-full truncate">More</span>
           </button>
         </div>
       </nav>
@@ -654,8 +574,8 @@ function InnerShell({ children }: { children: ReactNode }) {
               >
                 <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ background: "var(--sidebar-border)" }} />
                 <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm font-semibold">{t("more")}</p>
-                  <button type="button" onClick={() => setMoreOpen(false)} aria-label={t("closeNav")}>
+                  <p className="text-sm font-semibold">More</p>
+                  <button type="button" onClick={() => setMoreOpen(false)} aria-label="Close navigation">
                     <X size={18} strokeWidth={1.75} />
                   </button>
                 </div>
@@ -679,17 +599,17 @@ function InnerShell({ children }: { children: ReactNode }) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{displayName}</p>
                     <p className="truncate text-xs" style={{ color: "var(--ink-3)" }}>
-                      {orgName} · {(plan === "free" ? t("basic") : plan).toUpperCase()}
+                      {orgName} · {plan.toUpperCase()}
                     </p>
                   </div>
                 </div>
                 {navGroups.map((group) => (
-                  <div key={group.titleKey} className="mb-4">
+                  <div key={group.title} className="mb-4">
                     <p
                       className="px-1 pb-2 text-[10px] font-semibold uppercase tracking-wider"
                       style={{ color: "var(--ink-3)" }}
                     >
-                      {t(group.titleKey)}
+                      {group.title}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {group.items.map((item) => {
@@ -708,7 +628,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                             }}
                           >
                             <Icon size={16} strokeWidth={1.75} />
-                            <span className="truncate">{t(item.labelKey)}</span>
+                            <span className="truncate">{item.label}</span>
                             {item.to === "/app/review" && reviewBadge > 0 && (
                               <span
                                 className="ms-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
@@ -730,7 +650,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                   style={{ color: "var(--bad)", border: "1px solid var(--sidebar-border)" }}
                 >
                   <LogOut size={16} strokeWidth={1.75} />
-                  {t("signOut")}
+                  Sign out
                 </button>
               </div>
             </motion.div>

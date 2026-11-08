@@ -9,6 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { handleStaleChunkError } from "@/lib/reload-stale-chunk";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth-context";
@@ -44,6 +45,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    if (handleStaleChunkError(error)) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
@@ -83,6 +85,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { httpEquiv: "Cache-Control", content: "no-cache" },
 
       // ── Primary SEO ──────────────────────────────────────────────────────
       { title: "Wab — AI-Native Financial Audit & Compliance for PSX, NSE Traders" },
@@ -299,6 +302,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    const onRejection = (event: PromiseRejectionEvent) => {
+      if (handleStaleChunkError(event.reason)) event.preventDefault();
+    };
+    const onError = (event: ErrorEvent) => {
+      handleStaleChunkError(event.error ?? event.message);
+    };
+    window.addEventListener("unhandledrejection", onRejection);
+    window.addEventListener("error", onError);
+    return () => {
+      window.removeEventListener("unhandledrejection", onRejection);
+      window.removeEventListener("error", onError);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
