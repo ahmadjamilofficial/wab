@@ -924,6 +924,19 @@ function Chat({
             );
           })}
 
+          {status === "submitted" && (
+            <div
+              className="flex w-full max-w-[48rem] items-center gap-2 px-4 py-1"
+              role="status"
+              aria-live="polite"
+              aria-label="Wab is thinking"
+            >
+              <span className="wab-thinking-label text-sm font-medium tracking-wide">
+                Thinking
+              </span>
+            </div>
+          )}
+
           {/* Quota / provider / timeout error banners */}
           {error && (
             <ErrorBanner
