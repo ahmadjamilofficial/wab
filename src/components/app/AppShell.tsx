@@ -412,8 +412,10 @@ function InnerShell({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="flex h-screen overflow-hidden"\n      style={{ height: "100dvh", minHeight: 0, background: "var(--color-login-bg)", fontFamily: "var(--font-body)", color: "var(--color-text)" }}
+      className="flex h-screen overflow-hidden"
       style={{
+        height: "100dvh",
+        minHeight: 0,
         background: "var(--color-login-bg)",
         fontFamily: "var(--font-body)",
         color: "var(--color-text)",
