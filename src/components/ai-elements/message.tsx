@@ -276,9 +276,14 @@ const streamdownPlugins = { cjk, code, math };
 
 export const MessageResponse = memo(
   ({ className, children, ...props }: MessageResponseProps) => {
+    const [hydrated, setHydrated] = useState(false);
+    useEffect(() => setHydrated(true), []);
     if (children == null || children === "") return null;
+    // Streamdown may render browser-dependent markdown differently during SSR.
+    // Keep the server and first client render identical, then enable rich markdown.
+    if (!hydrated) return <div className={cn("whitespace-pre-wrap", className)}>{children}</div>;
     return (
-      <div suppressHydrationWarning>
+      <div>
         <Streamdown
           className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
           plugins={streamdownPlugins as any}
