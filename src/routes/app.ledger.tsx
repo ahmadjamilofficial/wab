@@ -1341,7 +1341,7 @@ function Ledger() {
   const needsReview = (transactions as TxRow[]).filter((t) => t.status === "needs_review").length;
 
   return (
-    <div className="p-4 sm:p-6 space-y-4">
+    <div className="space-y-4 p-3 sm:p-6">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -1554,7 +1554,7 @@ function Ledger() {
       {/* ── Table ── */}
       {!isLoading && transactions.length > 0 && (
         <div
-          className="overflow-hidden rounded-2xl bg-surface"
+          className="overflow-x-auto rounded-2xl bg-surface"
           style={{ border: "1px solid var(--hairline)" }}
         >
           <div className="overflow-x-auto">

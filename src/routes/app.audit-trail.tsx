@@ -55,7 +55,7 @@ function AuditTrail() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="space-y-6 p-3 sm:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.5rem" }}>Audit Trail</h1>
@@ -132,7 +132,7 @@ function AuditTrail() {
 
       {/* Log table */}
       <div
-        className="overflow-hidden rounded-2xl bg-surface"
+        className="overflow-x-auto rounded-2xl bg-surface"
         style={{ border: "1px solid var(--hairline)" }}
       >
         {isLoading ? (

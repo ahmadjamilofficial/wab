@@ -10,7 +10,7 @@ function DataSources() {
   const { profile } = useAuth();
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="space-y-6 p-3 sm:p-6">
       <div>
         <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.5rem" }}>Data Sources</h1>
         <p className="mt-0.5 text-sm" style={{ color: "var(--ink-2)" }}>

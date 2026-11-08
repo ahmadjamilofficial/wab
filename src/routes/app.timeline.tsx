@@ -67,7 +67,7 @@ function FinancialTimelinePage() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="space-y-6 p-3 sm:p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

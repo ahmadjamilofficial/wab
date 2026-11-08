@@ -236,7 +236,7 @@ function SignUp() {
       >
         <Link
           to="/"
-          className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+          className="absolute left-5 top-5 hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold md:inline-flex"
           style={{ border: "1px solid var(--hairline)", color: "var(--ink-2)", background: "var(--surface)" }}
         >
           <ArrowLeft size={13} strokeWidth={2} />

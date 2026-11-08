@@ -330,7 +330,7 @@ function Reconciliation() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="space-y-6 p-3 sm:p-6">
       <div>
         <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.5rem" }}>Reconciliation</h1>
         <p className="mt-0.5 text-sm" style={{ color: "var(--ink-2)" }}>
@@ -439,7 +439,7 @@ function Reconciliation() {
 
             {active.length > 0 ? (
               <div
-                className="overflow-hidden rounded-2xl bg-surface"
+                className="overflow-x-auto rounded-2xl bg-surface"
                 style={{ border: "1px solid var(--hairline)" }}
               >
                 <div className="border-b px-5 py-4" style={{ borderColor: "var(--hairline)" }}>

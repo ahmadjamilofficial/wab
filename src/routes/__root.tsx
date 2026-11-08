@@ -13,6 +13,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
+import { LocaleProvider } from "@/lib/locale-context";
+import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -302,13 +304,16 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TooltipProvider>
-          <AuthProvider>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-            <Toaster position="bottom-right" />
-          </AuthProvider>
-        </TooltipProvider>
+        <LocaleProvider>
+          <TooltipProvider>
+            <AuthProvider>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+              <Toaster position="bottom-right" />
+              <Analytics />
+            </AuthProvider>
+          </TooltipProvider>
+        </LocaleProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -421,3 +421,18 @@
 .chat-scroll::-webkit-scrollbar-thumb:hover {
   background-color: var(--chat-scrollbar-thumb-hover);
 }
+
+@media (max-width: 1023px) {
+  .app-mobile-main {
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-mobile-main h1 {
+    font-size: 1.35rem !important;
+    letter-spacing: -0.02em;
+  }
+
+  .app-mobile-main table {
+    min-width: 640px;
+  }
+}

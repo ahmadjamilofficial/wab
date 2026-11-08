@@ -3,15 +3,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
   BookOpen,
+  Check,
   ChevronDown,
   CreditCard,
-  FileText,
   GitFork,
   Inbox,
+  Languages,
   LayoutDashboard,
   LogOut,
-  Menu,
   Moon,
+  MoreHorizontal,
   PanelLeft,
   PanelRight,
   Plug,
@@ -36,8 +37,8 @@ import {
 import { usePendingApprovals } from "@/lib/data-hooks";
 import { useAgentHeartbeat } from "@/lib/use-agent-heartbeat";
 import { useTheme } from "@/lib/theme-context";
+import { LOCALES, useLocale, type LocaleCode } from "@/lib/locale-context";
 
-// ── Persist sidebar state across page loads ───────────────────────────────────
 const SIDEBAR_KEY = "wab.sidebar.expanded";
 function readSidebarPref(): boolean {
   if (typeof window === "undefined") return false;
@@ -56,40 +57,43 @@ function writeSidebarPref(v: boolean) {
   }
 }
 
-// ── Nav structure ─────────────────────────────────────────────────────────────
-
-const primaryItem = { label: "Ask Wab", icon: Sparkles, to: "/app/parser" } as const;
+const primaryItem = { labelKey: "askWab" as const, icon: Sparkles, to: "/app/parser" };
 
 const navGroups = [
   {
-    title: "Workspace",
+    titleKey: "workspace" as const,
     items: [
-      { label: "Portfolio", icon: LayoutDashboard, to: "/app/overview" },
-      { label: "Ledger", icon: BookOpen, to: "/app/ledger" },
-      { label: "Exceptions", icon: GitFork, to: "/app/reconciliation" },
-      { label: "Data Sources", icon: Plug, to: "/app/sources" },
-      { label: "Integrations", icon: Share2, to: "/app/integrations" },
-      { label: "Tax Center", icon: BarChart3, to: "/app/tax" },
-      { label: "Audit Trail", icon: Shield, to: "/app/audit-trail" },
+      { labelKey: "portfolio" as const, icon: LayoutDashboard, to: "/app/overview" },
+      { labelKey: "ledger" as const, icon: BookOpen, to: "/app/ledger" },
+      { labelKey: "exceptions" as const, icon: GitFork, to: "/app/reconciliation" },
+      { labelKey: "dataSources" as const, icon: Plug, to: "/app/sources" },
+      { labelKey: "integrations" as const, icon: Share2, to: "/app/integrations" },
+      { labelKey: "taxCenter" as const, icon: BarChart3, to: "/app/tax" },
+      { labelKey: "auditTrail" as const, icon: Shield, to: "/app/audit-trail" },
     ],
   },
   {
-    title: "Autonomous",
+    titleKey: "autonomous" as const,
     items: [
-      { label: "Activity Feed", icon: Radio, to: "/app/activity" },
-      { label: "Review Inbox", icon: Inbox, to: "/app/review" },
+      { labelKey: "activityFeed" as const, icon: Radio, to: "/app/activity" },
+      { labelKey: "reviewInbox" as const, icon: Inbox, to: "/app/review" },
     ],
   },
   {
-    title: "Account",
+    titleKey: "account" as const,
     items: [
-      { label: "Settings", icon: Settings, to: "/app/settings" },
-      { label: "Billing", icon: CreditCard, to: "/app/billing" },
+      { labelKey: "settings" as const, icon: Settings, to: "/app/settings" },
+      { labelKey: "billing" as const, icon: CreditCard, to: "/app/billing" },
     ],
   },
 ] as const;
 
-// ── NavItem ───────────────────────────────────────────────────────────────────
+const mobileTabs = [
+  { labelKey: "askWab" as const, icon: Sparkles, to: "/app/parser" },
+  { labelKey: "portfolio" as const, icon: LayoutDashboard, to: "/app/overview" },
+  { labelKey: "ledger" as const, icon: BookOpen, to: "/app/ledger" },
+  { labelKey: "reviewInbox" as const, icon: Inbox, to: "/app/review" },
+] as const;
 
 function NavItem({
   label,
@@ -152,7 +156,83 @@ function NavItem({
   );
 }
 
-// ── InnerShell ────────────────────────────────────────────────────────────────
+function LanguageMenu() {
+  const { locale, setLocale, t } = useLocale();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative lg:hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label={t("changeLanguage")}
+        className="inline-flex max-w-[46vw] items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold"
+        style={{
+          color: "var(--ink-2)",
+          border: "1px solid var(--sidebar-border)",
+          background: "var(--surface)",
+        }}
+      >
+        <Languages size={14} strokeWidth={1.75} />
+        <span className="truncate">{t("changeLanguage")}</span>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+            transition={{ duration: 0.14 }}
+            className="absolute end-0 top-[calc(100%+8px)] z-50 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-2xl p-1.5"
+            style={{
+              border: "1px solid var(--sidebar-border)",
+              background: "var(--sidebar)",
+              boxShadow: "var(--shadow-hover)",
+            }}
+          >
+            <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--ink-3)" }}>
+              {t("language")}
+            </p>
+            <div className="max-h-72 overflow-y-auto">
+              {LOCALES.map((item) => (
+                <button
+                  key={item.code}
+                  type="button"
+                  onClick={() => {
+                    setLocale(item.code as LocaleCode);
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm"
+                  style={{
+                    background: locale === item.code ? "var(--sidebar-accent)" : "transparent",
+                    color: "var(--sidebar-foreground)",
+                  }}
+                >
+                  <span>
+                    <span className="font-medium">{item.native}</span>
+                    <span className="ms-2 text-xs" style={{ color: "var(--ink-3)" }}>
+                      {item.label}
+                    </span>
+                  </span>
+                  {locale === item.code && <Check size={14} strokeWidth={2} />}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 function InnerShell({ children }: { children: ReactNode }) {
   const { user, profile, signOut } = useAuth();
@@ -160,27 +240,23 @@ function InnerShell({ children }: { children: ReactNode }) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const { setTheme, actualTheme } = useTheme();
+  const { t } = useLocale();
 
-  // Desktop sidebar: expanded state persisted in localStorage
   const [expanded, setExpanded] = useState(() => readSidebarPref());
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Review inbox badge — pending approvals count
   const { data: pendingApprovals } = usePendingApprovals(profile?.org_id);
   const reviewBadge = (pendingApprovals ?? []).length;
 
-  // Fire heartbeat once per session to schedule cron-equivalent jobs
   useAgentHeartbeat(!!profile?.org_id);
 
-  // Persist preference
   useEffect(() => {
     writeSidebarPref(expanded);
   }, [expanded]);
 
-  // Close user menu on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
@@ -202,23 +278,20 @@ function InnerShell({ children }: { children: ReactNode }) {
   const plan = profile?.plan || "free";
   const isAskPage = currentPath.startsWith("/app/parser");
   const initials = displayName.charAt(0).toUpperCase();
-  const avatarUrl = (profile?.avatar_url || user?.user_metadata?.["avatar_url"]) as
-    string | undefined;
+  const avatarUrl = (profile?.avatar_url || user?.user_metadata?.["avatar_url"]) as string | undefined;
 
   const isActive = (to: string) => currentPath === to || currentPath.startsWith(to + "/");
+  const tabActive = mobileTabs.some((tab) => isActive(tab.to));
 
-  // ── SidebarContent — shared by desktop and mobile ──────────────────────────
   function SidebarContent({ collapsed, onClose }: { collapsed: boolean; onClose?: () => void }) {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        {/* ── Logo + toggle ────────────────────────────────────────────────── */}
         <div className={`shrink-0 ${collapsed ? "flex flex-col items-center gap-3 p-3" : "p-4"}`}>
           <div className="flex w-full items-center justify-between">
             {collapsed ? (
-              /* When collapsed: just the logomark, clicking it expands */
               <button
                 type="button"
-                aria-label="Expand navigation"
+                aria-label={t("expandNav")}
                 onClick={() => (onClose ? onClose() : setExpanded(true))}
                 className="flex size-9 items-center justify-center rounded-xl transition-colors hover:bg-surface-hover"
                 style={{ background: "var(--sidebar)", border: "1px solid var(--sidebar-border)" }}
@@ -226,17 +299,16 @@ function InnerShell({ children }: { children: ReactNode }) {
                 <LogoMark size={20} />
               </button>
             ) : (
-              /* When expanded: logo on left, collapse button on right */
               <>
                 <Link to="/app/parser" aria-label="Wab home">
                   <Logo />
                 </Link>
                 <button
                   type="button"
-                  aria-label="Collapse navigation"
+                  aria-label={t("collapseNav")}
                   onClick={() => setExpanded(false)}
                   className="flex size-8 items-center justify-center rounded-xl transition-colors hover:bg-surface-hover"
-                  title="Collapse sidebar"
+                  title={t("collapseNav")}
                 >
                   <PanelLeft size={16} strokeWidth={1.75} style={{ color: "var(--ink-3)" }} />
                 </button>
@@ -244,7 +316,6 @@ function InnerShell({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          {/* Org badge — only when expanded */}
           {!collapsed && (
             <div
               className="mt-4 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs"
@@ -253,7 +324,7 @@ function InnerShell({ children }: { children: ReactNode }) {
               <div className="min-w-0">
                 <p className="truncate font-semibold">{orgName}</p>
                 <p style={{ color: "var(--ink-3)" }}>
-                  {(plan === "free" ? "BASIC" : plan).toUpperCase()} plan
+                  {(plan === "free" ? t("basic") : plan).toUpperCase()} {t("plan")}
                 </p>
               </div>
               <ChevronDown size={14} strokeWidth={1.75} style={{ color: "var(--ink-3)" }} />
@@ -261,14 +332,15 @@ function InnerShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* ── Nav links ─────────────────────────────────────────────────────── */}
         <nav
           className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin ${
             collapsed ? "flex flex-col items-center gap-1 px-3" : "space-y-4 px-4"
           }`}
         >
           <NavItem
-            {...primaryItem}
+            label={t(primaryItem.labelKey)}
+            icon={primaryItem.icon}
+            to={primaryItem.to}
             collapsed={collapsed}
             accent
             active={isActive(primaryItem.to)}
@@ -277,7 +349,7 @@ function InnerShell({ children }: { children: ReactNode }) {
 
           {navGroups.map((group) => (
             <div
-              key={group.title}
+              key={group.titleKey}
               className={collapsed ? "flex flex-col items-center gap-1" : "space-y-0.5"}
             >
               {!collapsed && (
@@ -285,7 +357,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                   className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider"
                   style={{ color: "var(--sidebar-primary)", opacity: 0.45 }}
                 >
-                  {group.title}
+                  {t(group.titleKey)}
                 </p>
               )}
               {collapsed && (
@@ -293,8 +365,10 @@ function InnerShell({ children }: { children: ReactNode }) {
               )}
               {group.items.map((item) => (
                 <NavItem
-                  key={item.label}
-                  {...item}
+                  key={item.labelKey}
+                  label={t(item.labelKey)}
+                  icon={item.icon}
+                  to={item.to}
                   collapsed={collapsed}
                   active={isActive(item.to)}
                   badge={item.to === "/app/review" ? reviewBadge : undefined}
@@ -305,9 +379,7 @@ function InnerShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        {/* ── User profile ──────────────────────────────────────────────────── */}
         <div ref={collapsed ? undefined : userMenuRef} className="relative shrink-0 p-3">
-          {/* Profile button — when collapsed, clicking opens user menu ABOVE */}
           <button
             type="button"
             onClick={() => setUserMenuOpen((v) => !v)}
@@ -342,7 +414,6 @@ function InnerShell({ children }: { children: ReactNode }) {
             )}
           </button>
 
-          {/* User menu — always shown when userMenuOpen, regardless of collapsed state */}
           <AnimatePresence>
             {userMenuOpen && (
               <motion.div
@@ -355,11 +426,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                 style={{
                   position: collapsed ? "fixed" : "absolute",
                   ...(collapsed
-                    ? {
-                        bottom: "16px",
-                        left: "72px",
-                        minWidth: 220,
-                      }
+                    ? { bottom: "16px", left: "72px", minWidth: 220 }
                     : {
                         bottom: "100%",
                         left: "12px",
@@ -373,7 +440,6 @@ function InnerShell({ children }: { children: ReactNode }) {
                   boxShadow: "var(--shadow-hover)",
                 }}
               >
-                {/* User info row at top */}
                 <div className="flex items-center gap-2.5 px-3 py-2 mb-1">
                   <div
                     className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold"
@@ -405,7 +471,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <User size={16} strokeWidth={1.75} />
-                  Account settings
+                  {t("accountSettings")}
                 </Link>
                 <button
                   type="button"
@@ -416,7 +482,7 @@ function InnerShell({ children }: { children: ReactNode }) {
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <LogOut size={16} strokeWidth={1.75} />
-                  Sign out
+                  {t("signOut")}
                 </button>
               </motion.div>
             )}
@@ -426,7 +492,6 @@ function InnerShell({ children }: { children: ReactNode }) {
     );
   }
 
-  // ── Layout ─────────────────────────────────────────────────────────────────
   return (
     <div
       className="flex h-dvh h-screen overflow-hidden"
@@ -436,7 +501,6 @@ function InnerShell({ children }: { children: ReactNode }) {
         color: "var(--color-text)",
       }}
     >
-      {/* Desktop sidebar — own 100vh scroll, independent of the page */}
       <motion.aside
         animate={{ width: expanded ? 248 : 64 }}
         transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
@@ -444,15 +508,13 @@ function InnerShell({ children }: { children: ReactNode }) {
         style={{ background: "var(--sidebar)", borderRight: "1px solid var(--sidebar-border)" }}
       >
         <SidebarContent collapsed={!expanded} />
-
-        {/* Expand tab — shown only when sidebar is collapsed (on the right edge) */}
         {!expanded && (
           <button
             type="button"
-            aria-label="Expand navigation"
+            aria-label={t("expandNav")}
             onClick={() => setExpanded(true)}
-            title="Expand sidebar"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 flex size-5 items-center justify-center rounded-full border shadow-sm transition-shadow hover:shadow-md"
+            title={t("expandNav")}
+            className="absolute right-0 top-1/2 z-10 flex size-5 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border shadow-sm transition-shadow hover:shadow-md"
             style={{ borderColor: "var(--sidebar-border)", background: "var(--sidebar)" }}
           >
             <PanelRight size={11} strokeWidth={2} style={{ color: "var(--ink-3)" }} />
@@ -460,52 +522,20 @@ function InnerShell({ children }: { children: ReactNode }) {
         )}
       </motion.aside>
 
-      {/* Mobile overlay + drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-40 lg:hidden"
-              style={{ background: "var(--scrim)", backdropFilter: "blur(4px)" }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.aside
-              className="fixed left-0 top-0 z-50 h-dvh h-screen w-72 overflow-hidden shadow-2xl lg:hidden"
-              style={{ background: "var(--sidebar)", borderRight: "1px solid var(--sidebar-border)" }}
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <SidebarContent collapsed={false} onClose={() => setMobileOpen(false)} />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Main content */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header
-          className="flex shrink-0 items-center gap-3 border-b px-4 py-2 sm:px-6"
+          className="flex shrink-0 items-center gap-2 border-b px-3 py-2 sm:gap-3 sm:px-6"
           style={{ background: "var(--sidebar)", borderColor: "var(--sidebar-border)" }}
         >
-          <button
-            type="button"
-            className="lg:hidden"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Open navigation"
-          >
-            <Menu size={22} strokeWidth={1.75} />
-          </button>
-
-          <div className="ml-auto flex items-center gap-2">
+          <div className="min-w-0 lg:hidden">
+            <LogoMark size={22} />
+          </div>
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            <LanguageMenu />
             <button
               type="button"
               onClick={() => setTheme(actualTheme === "dark" ? "light" : "dark")}
-              className="hidden items-center justify-center rounded-xl p-2 transition-colors hover:bg-surface-hover sm:flex"
+              className="flex items-center justify-center rounded-xl p-2 transition-colors hover:bg-surface-hover"
               title={actualTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               style={{ color: "var(--ink-2)" }}
             >
@@ -517,17 +547,17 @@ function InnerShell({ children }: { children: ReactNode }) {
             </button>
 
             {!isAskPage && (
-            <Link
-              to="/app/parser"
-              className="hidden items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold text-white sm:flex"
-              style={{
-                background: "var(--color-accent)",
-                boxShadow: "var(--shadow-accent)",
-              }}
-            >
-              <Upload size={14} strokeWidth={2} />
-              Upload statement
-            </Link>
+              <Link
+                to="/app/parser"
+                className="hidden items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold text-white sm:flex"
+                style={{
+                  background: "var(--color-accent)",
+                  boxShadow: "var(--shadow-accent)",
+                }}
+              >
+                <Upload size={14} strokeWidth={2} />
+                {t("uploadStatement")}
+              </Link>
             )}
 
             <div className="relative">
@@ -538,11 +568,178 @@ function InnerShell({ children }: { children: ReactNode }) {
         </header>
 
         <main
-          className={`min-h-0 flex-1 ${isAskPage ? "overflow-hidden" : "overflow-y-auto scrollbar-thin"}`}
+          className={`app-mobile-main min-h-0 flex-1 ${isAskPage ? "overflow-hidden" : "overflow-y-auto scrollbar-thin"}`}
         >
           {children}
         </main>
       </div>
+
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden"
+        style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
+      >
+        <div
+          className="mx-auto flex max-w-lg items-stretch justify-between rounded-[22px] px-1.5 py-1.5"
+          style={{
+            background: "color-mix(in oklch, var(--sidebar) 88%, transparent)",
+            border: "1px solid var(--sidebar-border)",
+            boxShadow: "0 18px 50px color-mix(in oklch, var(--color-text) 18%, transparent)",
+            backdropFilter: "blur(22px) saturate(1.4)",
+          }}
+        >
+          {mobileTabs.map((tab) => {
+            const active = isActive(tab.to);
+            const Icon = tab.icon;
+            return (
+              <Link
+                key={tab.to}
+                to={tab.to}
+                onClick={() => setMoreOpen(false)}
+                className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-semibold"
+                style={{
+                  color: active ? "var(--sidebar-primary)" : "var(--ink-3)",
+                  background: active ? "var(--sidebar-accent)" : "transparent",
+                }}
+              >
+                <Icon size={18} strokeWidth={active ? 2.1 : 1.7} />
+                <span className="max-w-full truncate">{t(tab.labelKey)}</span>
+                {tab.to === "/app/review" && reviewBadge > 0 && (
+                  <span
+                    className="absolute end-2 top-1 flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                    style={{ background: "var(--bad)" }}
+                  >
+                    {reviewBadge > 9 ? "9+" : reviewBadge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-semibold"
+            style={{
+              color: moreOpen || !tabActive ? "var(--sidebar-primary)" : "var(--ink-3)",
+              background: moreOpen || !tabActive ? "var(--sidebar-accent)" : "transparent",
+            }}
+          >
+            <MoreHorizontal size={18} strokeWidth={moreOpen || !tabActive ? 2.1 : 1.7} />
+            <span className="max-w-full truncate">{t("more")}</span>
+          </button>
+        </div>
+      </nav>
+
+      <AnimatePresence>
+        {moreOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40 lg:hidden"
+              style={{ background: "var(--scrim)", backdropFilter: "blur(6px)" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMoreOpen(false)}
+            />
+            <motion.div
+              className="fixed inset-x-0 bottom-0 z-50 lg:hidden"
+              initial={{ y: "110%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "110%" }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div
+                className="mx-auto max-h-[78dvh] w-full max-w-lg overflow-y-auto rounded-t-[28px] px-4 pb-28 pt-3"
+                style={{
+                  background: "var(--sidebar)",
+                  border: "1px solid var(--sidebar-border)",
+                  boxShadow: "var(--shadow-hover)",
+                }}
+              >
+                <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ background: "var(--sidebar-border)" }} />
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-sm font-semibold">{t("more")}</p>
+                  <button type="button" onClick={() => setMoreOpen(false)} aria-label={t("closeNav")}>
+                    <X size={18} strokeWidth={1.75} />
+                  </button>
+                </div>
+                <div
+                  className="mb-4 flex items-center gap-3 rounded-2xl px-3 py-3"
+                  style={{ background: "var(--sidebar-accent)", border: "1px solid var(--sidebar-border)" }}
+                >
+                  <div
+                    className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-semibold"
+                    style={{
+                      background: avatarUrl ? "transparent" : "var(--color-accent)",
+                      color: "var(--accent-fg)",
+                    }}
+                  >
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={displayName} className="size-full object-cover" />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{displayName}</p>
+                    <p className="truncate text-xs" style={{ color: "var(--ink-3)" }}>
+                      {orgName} · {(plan === "free" ? t("basic") : plan).toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+                {navGroups.map((group) => (
+                  <div key={group.titleKey} className="mb-4">
+                    <p
+                      className="px-1 pb-2 text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: "var(--ink-3)" }}
+                    >
+                      {t(group.titleKey)}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {group.items.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.to);
+                        return (
+                          <Link
+                            key={item.to}
+                            to={item.to}
+                            onClick={() => setMoreOpen(false)}
+                            className="flex items-center gap-2.5 rounded-2xl px-3 py-3 text-sm font-medium"
+                            style={{
+                              background: active ? "var(--sidebar-accent)" : "var(--color-login-bg)",
+                              color: active ? "var(--sidebar-primary)" : "var(--sidebar-foreground)",
+                              border: "1px solid var(--sidebar-border)",
+                            }}
+                          >
+                            <Icon size={16} strokeWidth={1.75} />
+                            <span className="truncate">{t(item.labelKey)}</span>
+                            {item.to === "/app/review" && reviewBadge > 0 && (
+                              <span
+                                className="ms-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+                                style={{ background: "var(--bad)" }}
+                              >
+                                {reviewBadge}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="mb-2 flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-medium"
+                  style={{ color: "var(--bad)", border: "1px solid var(--sidebar-border)" }}
+                >
+                  <LogOut size={16} strokeWidth={1.75} />
+                  {t("signOut")}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

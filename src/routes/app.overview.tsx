@@ -331,7 +331,7 @@ function MissionControl() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-[1600px]">
+    <div className="space-y-5 p-3 sm:space-y-6 sm:p-6 max-w-[1600px]">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -356,7 +356,7 @@ function MissionControl() {
       <DailyBriefing />
 
       {/* Key Metrics Grid */}
-      <div className="rounded-2xl bg-surface p-6" style={{ border: "1px solid var(--hairline)" }}>
+      <div className="rounded-2xl bg-surface p-4 sm:p-6" style={{ border: "1px solid var(--hairline)" }}>
         <div className="mb-4">
           <h2 className="text-sm font-bold">Key Metrics</h2>
           <p className="text-xs" style={{ color: "var(--ink-3)" }}>
