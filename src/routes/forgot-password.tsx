@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Logo } from "@/components/brand/Logo";
-import { resetPassword } from "@/lib/supabase";\nimport { resetPassword } from "@/lib/supabase";
+import { resetPassword } from "@/lib/supabase";
 
 export const Route = createFileRoute("/forgot-password")({
   component: ForgotPassword,
@@ -19,7 +19,7 @@ type FormData = z.infer<typeof schema>;
 
 function ForgotPassword() {
   const [sent, setSent] = useState(false);
-  const [serverErr, setServerErr] = useState("");\n  const [serverErr, setServerErr] = useState("");
+  const [serverErr, setServerErr] = useState("");
 
   const {
     register,
@@ -97,7 +97,7 @@ function ForgotPassword() {
                 <Mail size={16} strokeWidth={1.75} />
                 {isSubmitting ? "Sending…" : "Send reset link"}
               </motion.button>
-              {serverErr && <p className="text-sm" style={{ color: "var(--bad)" }}>{serverErr}</p>}\n              {serverErr && <p className="text-sm" style={{ color: "var(--bad)" }}>{serverErr}</p>}
+              {serverErr && <p className="text-sm" style={{ color: "var(--bad)" }}>{serverErr}</p>}
             </form>
           </>
         ) : (
