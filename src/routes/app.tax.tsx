@@ -10,6 +10,8 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Btn, Panel, reveal, StatusPill } from "@/components/kit";
 import { useAuth } from "@/lib/auth-context";
 import { useTransactions } from "@/lib/data-hooks";
@@ -201,21 +203,50 @@ function TaxCenter() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles size={16} strokeWidth={1.75} style={{ color: "var(--color-accent)" }} />
-            <p className="text-sm font-semibold">Gemini AI Tax Explanation</p>
+            <p className="text-sm font-semibold">AI Tax Commentary</p>
           </div>
           <Btn variant="secondary" onClick={getAIExplanation} disabled={loadingAI}>
             {loadingAI ? "Explaining…" : aiExplanation ? "Refresh" : "Explain in plain English"}
           </Btn>
         </div>
         {aiExplanation ? (
-          <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--ink-2)" }}>
-            {aiExplanation}
-          </p>
+          <div
+            className="mt-5 rounded-2xl px-5 py-5 sm:px-6"
+            style={{
+              background: "linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 4%, var(--surface)), var(--surface))",
+              border: "1px solid color-mix(in srgb, var(--color-accent) 14%, var(--hairline))",
+              boxShadow: "inset 0 1px 0 color-mix(in srgb, white 3%, transparent)",
+            }}
+          >
+            <div className="tax-commentary prose prose-sm max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ children }) => <h1 className="mb-3 mt-0 text-lg font-semibold tracking-tight" style={{ color: "var(--color-text)" }}>{children}</h1>,
+                  h2: ({ children }) => <h2 className="mb-2 mt-5 text-base font-semibold tracking-tight" style={{ color: "var(--color-text)" }}>{children}</h2>,
+                  h3: ({ children }) => <h3 className="mb-2 mt-4 text-sm font-semibold" style={{ color: "var(--color-text)" }}>{children}</h3>,
+                  p: ({ children }) => <p className="mb-3 text-sm leading-7 last:mb-0" style={{ color: "var(--ink-2)" }}>{children}</p>,
+                  ul: ({ children }) => <ul className="mb-3 list-disc space-y-1.5 pl-5 text-sm leading-6" style={{ color: "var(--ink-2)" }}>{children}</ul>,
+                  ol: ({ children }) => <ol className="mb-3 list-decimal space-y-1.5 pl-5 text-sm leading-6" style={{ color: "var(--ink-2)" }}>{children}</ol>,
+                  li: ({ children }) => <li className="pl-1">{children}</li>,
+                  strong: ({ children }) => <strong className="font-semibold" style={{ color: "var(--color-text)" }}>{children}</strong>,
+                  blockquote: ({ children }) => <blockquote className="my-4 rounded-r-xl border-l-2 py-2 pl-4" style={{ borderColor: "var(--color-accent)", background: "color-mix(in srgb, var(--color-accent) 5%, transparent)", color: "var(--ink-2)" }}>{children}</blockquote>,
+                  hr: () => <hr className="my-4" style={{ borderColor: "var(--hairline)" }} />,
+                  table: ({ children }) => <div className="my-4 overflow-x-auto"><table className="w-full text-sm">{children}</table></div>,
+                  th: ({ children }) => <th className="border-b px-3 py-2 text-left text-xs font-semibold" style={{ borderColor: "var(--hairline)", color: "var(--ink-2)" }}>{children}</th>,
+                  td: ({ children }) => <td className="border-b px-3 py-2" style={{ borderColor: "var(--hairline)", color: "var(--ink-2)" }}>{children}</td>,
+                }}
+              >
+                {aiExplanation}
+              </ReactMarkdown>
+            </div>
+            <p className="mt-5 border-t pt-3 text-[11px] leading-relaxed" style={{ borderColor: "var(--hairline)", color: "var(--ink-3)" }}>
+              AI-generated commentary for informational purposes. Verify tax rates and filing treatment with a qualified tax professional; the calculated figures above are based on the records and settings currently in Wab.
+            </p>
+          </div>
         ) : (
-          <p className="mt-3 text-sm" style={{ color: "var(--ink-3)" }}>
-            Click "Explain in plain English" to have Gemini AI narrate your tax computation results
-            in simple language. The deterministic FIFO math is computed in code first — AI only
-            explains the results.
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--ink-3)" }}>
+            Generate a structured explanation of your computed tax figures. Wab calculates FIFO and estimated liability in code; AI provides commentary only.
           </p>
         )}
       </Panel>
