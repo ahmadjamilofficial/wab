@@ -144,7 +144,37 @@ function TaxCenter() {
             </div>
           )}
           <div className="flex items-end ml-auto">
-            <Btn variant="secondary">
+            <Btn variant="secondary" onClick={() => {
+              const rows = [
+                ["Wab Tax Report", "Value"],
+                ["Tax year", activeYear],
+                ["Jurisdiction", activeJurisdiction],
+                ["Filer status", filerStatus],
+                ["Currency", currency],
+                ["Short-term gain", tax.shortTermGain],
+                ["Long-term gain", tax.longTermGain],
+                ["Total gain", tax.totalGain],
+                ["Dividend withholding tax", tax.dividendWHT],
+                ["Estimated tax due", tax.estimatedTaxDue],
+                ["Computed at", tax.computedAt],
+                [],
+                ["Ticker", "Buy date", "Sell date", "Quantity", "Cost basis", "Sale price", "Holding days", "Gain", "Tax rate", "Tax due"],
+                ...tax.lots.map((lot) => [lot.ticker, lot.buyDate, lot.sellDate, lot.quantity, lot.costBasis, lot.salePrice, lot.holdingDays, lot.gain, lot.taxRate, lot.taxDue]),
+              ];
+              const csv = rows.map((row) => row.map((cell) => {
+                const value = String(cell ?? "");
+                return '"' + value.replace(/"/g, '""') + '"';
+              }).join(",")).join("\\r\\n");
+              const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const anchor = document.createElement("a");
+              anchor.href = url;
+              anchor.download = `wab-tax-report-${activeJurisdiction}-${activeYear}.csv`;
+              document.body.appendChild(anchor);
+              anchor.click();
+              anchor.remove();
+              URL.revokeObjectURL(url);
+            }}>
               <Download size={15} strokeWidth={1.75} />
               Generate Tax Report
             </Btn>
