@@ -6,16 +6,16 @@ export const Route = createFileRoute("/api/market-data")({
       GET: async ({ request }) => {
         try {
           const url = new URL(request.url);
-          const symbol = url.searchParams.get("symbol") || "";
+          const symbol = (url.searchParams.get("symbol") || "").trim().toUpperCase();
           const exchange = (url.searchParams.get("exchange") || "PSX") as "PSX" | "NSE";
           const range = url.searchParams.get("range") || "1mo";
           const interval = url.searchParams.get("interval") || "1d";
-          if (!/^[A-Z0-9.&_-]{1,20}$/i.test(symbol) || !["PSX", "NSE"].includes(exchange) || !["1d", "5d", "1mo", "3mo", "1y"].includes(range) || !["5m", "30m", "1d"].includes(interval)) return Response.json({ points: [] }, { status: 400 });
+          if (!/^[A-Z0-9][A-Z0-9.&_-]{0,19}$/.test(symbol) || !["PSX", "NSE"].includes(exchange) || !["1d", "5d", "1mo", "3mo", "1y"].includes(range) || !["5m", "30m", "1d"].includes(interval)) return Response.json({ points: [], error: "Invalid ticker, exchange, range, or interval. Ticker must be a symbol, not a company name." }, { status: 400 });
           const ticker = normalizeTicker(symbol, exchange);
           const response = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(ticker) + "?interval=" + interval + "&range=" + range, { headers: { "User-Agent": "Mozilla/5.0" } });
-          if (!response.ok) return Response.json({ points: [] }, { status: 502 });
+          if (!response.ok) return Response.json({ points: [], error: `Market data provider returned HTTP ${response.status} for ${ticker}. The symbol may not be listed on the selected exchange or the provider may be unavailable.`, provider: "Yahoo Finance", requestedSymbol: symbol, providerSymbol: ticker }, { status: 502 });
           const data = await response.json();
-          const result = data.chart?.result?.[0];
+          const result = data.chart?.result?.[0];\n          const providerError = data.chart?.error;\n          if (!result) return Response.json({ points: [], error: providerError?.description ?? `No market history found for ${ticker}.`, requestedSymbol: symbol, providerSymbol: ticker }, { status: 502 });
           const timestamps = result?.timestamp || [];
           const closes = result?.indicators?.quote?.[0]?.close || [];
           const points = timestamps.map((time: number, i: number) => ({ time: time * 1000, price: closes[i] })).filter((p: { time: number; price: number | null }) => typeof p.price === "number" && Number.isFinite(p.price));
