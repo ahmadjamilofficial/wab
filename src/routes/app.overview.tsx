@@ -31,6 +31,7 @@ import {
 import { reveal, Panel } from "@/components/kit";
 import { useAuth } from "@/lib/auth-context";
 import { PortfolioMarketTerminal } from "@/components/portfolio/PortfolioMarketTerminal";
+import { PortfolioAnalyticsLab } from "@/components/portfolio/PortfolioAnalyticsLab";
 import { useTransactions, useReconciliationFlags } from "@/lib/data-hooks";
 import { computeTax } from "@/lib/tax";
 import {
@@ -348,6 +349,9 @@ function MissionControl() {
 
       {/* Premium trading terminal */}
       <PortfolioMarketTerminal transactions={transactions} currency={currency} />
+
+      {/* Interactive chart suite and trading support tools */}
+      <PortfolioAnalyticsLab transactions={transactions} currency={currency} />
 
       {/* Daily Briefing */}
       <DailyBriefing />
