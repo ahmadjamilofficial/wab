@@ -370,17 +370,18 @@ function TxFormModal({
               <label className={labelClass} style={{ color: "var(--ink-2)" }}>
                 Exchange
               </label>
-              <select
+              <input
                 className={fieldClass}
                 style={{ borderColor: "var(--hairline)" }}
                 value={form.exchange}
-                onChange={(e) => set("exchange", e.target.value)}
-              >
-                <option value="PSX">PSX</option>
-                <option value="NSE">NSE</option>
-                <option value="BSE">BSE</option>
-                <option value="OTHER">Other</option>
-              </select>
+                onChange={(e) => set("exchange", e.target.value.toUpperCase().trim())}
+                list="wab-global-exchanges"
+                placeholder="Exchange code (e.g. NYSE, LSE, PSX)"
+                autoComplete="off"
+              />
+              <datalist id="wab-global-exchanges">
+                {["PSX", "NSE", "BSE", "NYSE", "NASDAQ", "AMEX", "TSX", "LSE", "AIM", "Euronext", "XETRA", "FWB", "SIX", "BME", "MIL", "TSE", "HKEX", "SSE", "SZSE", "KRX", "ASX", "NZX", "SGX", "SET", "IDX", "Bursa Malaysia", "Tadawul", "ADX", "DFM", "QSE", "KSE", "JSE", "Bovespa", "NYSE Arca", "OTC"] .map((exchange) => <option key={exchange} value={exchange} />)}
+              </datalist>
             </div>
 
             {/* Notes */}
