@@ -187,7 +187,7 @@ function InnerShell({ children }: { children: ReactNode }) {
   async function handleSignOut() {
     await signOut();
     setUserMenuOpen(false);
-    nav({ to: "/" });
+    nav({ to: "/signin", replace: true });
   }
 
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "User";

@@ -31,7 +31,7 @@ function ResetPassword() {
     const { error } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
     if (error) return setErr(error.message);
-    nav({ to: "/app/parser", replace: true });
+    nav({ to: "/app/overview", replace: true });
   }
 
   return (

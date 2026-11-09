@@ -22,7 +22,7 @@ export async function signUpWithEmail(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: meta, emailRedirectTo: window.location.origin },
+    options: { data: meta, emailRedirectTo: `${window.location.origin}/signin?next=/app/overview` },
   });
   if (error) throw new Error(error.message);
   return data;

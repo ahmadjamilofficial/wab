@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { LogoIcon } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { signInWithEmail, signInWithGoogle } from "@/lib/supabase";
+import { signInWithEmail, signInWithGoogle, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/signin")({
@@ -27,6 +27,8 @@ function SignIn() {
   const [showPw, setShowPw] = useState(false);
   const [serverErr, setServerErr] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [emailLinkBusy, setEmailLinkBusy] = useState(false);
+  const [emailLinkSent, setEmailLinkSent] = useState(false);
 
   useEffect(() => {
     persistInviteToken(new URLSearchParams(window.location.search).get("invite"));
@@ -35,7 +37,9 @@ function SignIn() {
   // As soon as a session appears (from any sign-in method), navigate to dashboard
   useEffect(() => {
     if (!loading && session) {
-      nav({ to: "/app/overview", replace: true });
+      const requested = new URLSearchParams(window.location.search).get("next");
+      const destination = requested && requested.startsWith("/app/") && !requested.startsWith("//") ? requested : "/app/overview";
+      window.location.replace(destination);
     }
   }, [session, loading, nav]);
 
@@ -53,6 +57,15 @@ function SignIn() {
     } catch (e) {
       setServerErr((e as Error).message);
     }
+  }
+
+  async function sendEmailSignInLink() {
+    const email = (document.querySelector("input[type=email]") as HTMLInputElement | null)?.value.trim() ?? "";
+    if (!z.string().email().safeParse(email).success) { setServerErr("Enter a valid email address first."); return; }
+    setEmailLinkBusy(true); setServerErr("");
+    try { const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/signin?next=/app/overview` } }); if (error) throw error; setEmailLinkSent(true); }
+    catch (error) { setServerErr(error instanceof Error ? error.message : "Could not send sign-in link."); }
+    finally { setEmailLinkBusy(false); }
   }
 
   async function handleGoogleSignIn() {
@@ -304,6 +317,8 @@ function SignIn() {
               {!isSubmitting && <ArrowRightCircle size={18} strokeWidth={1.75} />}
             </motion.button>
           </form>
+          <button type="button" onClick={() => void sendEmailSignInLink()} disabled={emailLinkBusy} className="mt-3 w-full rounded-full border px-5 py-3 text-sm font-medium disabled:opacity-60" style={{ borderColor: "var(--hairline)", color: "var(--ink-2)" }}>{emailLinkBusy ? "Sending sign-in link…" : "Email me a sign-in link"}</button>
+          {emailLinkSent && <p className="mt-3 text-center text-xs" style={{ color: "var(--ok)" }}>If email sign-in is enabled, a secure link has been sent. Check your inbox and spam folder.</p>}
         </motion.div>
       </div>
     </div>
