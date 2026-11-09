@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { LogoIcon } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { signInWithEmail, signInWithGoogle } from "@/lib/supabase";
+import { signInWithEmail, signInWithGoogle, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/signin")({
@@ -26,7 +26,7 @@ function SignIn() {
   const { session, loading } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const [serverErr, setServerErr] = useState("");
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);\n  const [emailLinkBusy, setEmailLinkBusy] = useState(false);\n  const [emailLinkSent, setEmailLinkSent] = useState(false);
 
   useEffect(() => {
     persistInviteToken(new URLSearchParams(window.location.search).get("invite"));
@@ -35,7 +35,7 @@ function SignIn() {
   // As soon as a session appears (from any sign-in method), navigate to dashboard
   useEffect(() => {
     if (!loading && session) {
-      nav({ to: "/app/overview", replace: true });
+      const requested = new URLSearchParams(window.location.search).get("next");\n      const destination = requested && requested.startsWith("/app/") && !requested.startsWith("//") ? requested : "/app/overview";\n      window.location.replace(destination);
     }
   }, [session, loading, nav]);
 
@@ -55,7 +55,7 @@ function SignIn() {
     }
   }
 
-  async function handleGoogleSignIn() {
+  async function sendEmailSignInLink() {\n    const email = (document.querySelector("input[type=email]") as HTMLInputElement | null)?.value.trim() ?? "";\n    if (!z.string().email().safeParse(email).success) { setServerErr("Enter a valid email address first."); return; }\n    setEmailLinkBusy(true); setServerErr("");\n    try { const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/signin?next=/app/overview` } }); if (error) throw error; setEmailLinkSent(true); }\n    catch (error) { setServerErr(error instanceof Error ? error.message : "Could not send sign-in link."); }\n    finally { setEmailLinkBusy(false); }\n  }\n\n  async function handleGoogleSignIn() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
