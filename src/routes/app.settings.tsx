@@ -93,20 +93,35 @@ function Settings() {
     setInviting(true);
     try {
       const token = randomInviteToken();
-      const { error } = await supabase.from("org_invites").insert({
+      const { data: invite, error } = await supabase.from("org_invites").insert({
         org_id: profile.org_id,
         email,
         role: inviteRole,
         token,
         invited_by: user.id,
         status: "pending",
-      });
+      }).select("id").single();
       if (error) throw error;
       const url = inviteUrl(token);
       await navigator.clipboard.writeText(url).catch(() => undefined);
-      toast.success(`Invite created for ${email}`, {
-        description: "The invite link is copied. Share it so they can join this organisation.",
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("Your session expired. Please sign in again.");
+      const mailResponse = await fetch("/api/team/invite-email", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ invite_id: invite.id }),
       });
+      const mailResult = await mailResponse.json().catch(() => ({})) as { error?: string };
+      if (!mailResponse.ok) {
+        toast.warning("Invitation created, but email was not sent", {
+          description: mailResult.error ?? "The invite link is copied. Share it manually or configure email delivery.",
+        });
+      } else {
+        toast.success(`Invitation email sent to ${email}`, {
+          description: "A secure invite link was also copied to your clipboard.",
+        });
+      }
       setInviteEmail("");
       setInviteOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["org-invites", profile.org_id] });
