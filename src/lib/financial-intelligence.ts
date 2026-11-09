@@ -5,7 +5,6 @@
 
 import { supabase } from "./supabase";
 import { computeTax } from "./tax";
-import { fetchMarketPrices, type MarketPrice } from "./market-data";
 import type { Transaction } from "./demo-data";
 
 // ── Event Types ───────────────────────────────────────────────────────────────
@@ -99,7 +98,7 @@ export interface FinancialContext {
 export interface PortfolioSummary {
   totalValue: number;
   realizedGains: number;
-  unrealizedGains: number;
+  unrealizedGains: number | null;
   taxLiability: number;
   unreconciledCount: number;
   totalTransactions: number;
@@ -140,40 +139,18 @@ export async function computePortfolioSummary(
     }
   }
 
-  // Fetch live market prices for all positions
-  const tickerList = Object.entries(positions)
-    .filter(([, p]) => p.qty > 0)
-    .map(([ticker, p]) => ({ ticker, exchange: p.exchange }));
-
-  const marketPrices = await fetchMarketPrices(tickerList);
-
-  // Calculate portfolio value using live market prices
+  // No external quote provider is used. Wab reports the recorded cost basis
+  // until the user supplies a verified current-price source.
   let totalValue = 0;
-  let totalUnrealizedGain = 0;
   const tickerBreakdown: Array<{ ticker: string; value: number; pct: number }> = [];
 
   for (const [ticker, p] of Object.entries(positions)) {
     if (p.qty <= 0) continue;
-
-    const key = `${p.exchange}:${ticker}`;
-    const marketPrice = marketPrices.get(key);
-    const currentPrice = marketPrice?.price || p.avgCost; // Fallback to avg cost if price fetch fails
-
-    const marketValue = p.qty * currentPrice;
     const costBasis = p.qty * p.avgCost;
-    const unrealizedGain = marketValue - costBasis;
-
-    totalValue += marketValue;
-    totalUnrealizedGain += unrealizedGain;
-
-    tickerBreakdown.push({
-      ticker,
-      value: marketValue,
-      pct: 0, // Will calculate after totalValue is known
-    });
+    totalValue += costBasis;
+    tickerBreakdown.push({ ticker, value: costBasis, pct: 0 });
   }
 
-  // Calculate percentages
   const finalTickerBreakdown = tickerBreakdown
     .sort((a, b) => b.value - a.value)
     .slice(0, 8)
@@ -194,7 +171,7 @@ export async function computePortfolioSummary(
   return {
     totalValue: Math.round(totalValue),
     realizedGains: Math.round(tax.totalGain),
-    unrealizedGains: Math.round(totalUnrealizedGain),
+    unrealizedGains: null,
     taxLiability: Math.round(tax.estimatedTaxDue),
     unreconciledCount,
     totalTransactions: transactions.length,
