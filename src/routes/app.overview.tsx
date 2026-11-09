@@ -30,7 +30,6 @@ import {
 } from "recharts";
 import { reveal, Panel } from "@/components/kit";
 import { useAuth } from "@/lib/auth-context";
-import { PortfolioMarketTerminal } from "@/components/portfolio/PortfolioMarketTerminal";
 import { useTransactions, useReconciliationFlags } from "@/lib/data-hooks";
 import { computeTax } from "@/lib/tax";
 import {
@@ -331,7 +330,7 @@ function MissionControl() {
             Portfolio Overview
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-            Real-time portfolio health and performance metrics
+            Portfolio health and ledger-based intelligence
           </p>
         </div>
         <Link
@@ -343,9 +342,6 @@ function MissionControl() {
           Upload Data
         </Link>
       </div>
-
-      {/* Premium trading terminal */}
-      <PortfolioMarketTerminal transactions={transactions} currency={currency} />
 
       {/* Daily Briefing */}
       <DailyBriefing />
@@ -360,9 +356,9 @@ function MissionControl() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
-            label="Portfolio Value"
+            label="Recorded Cost Basis"
             value={summaryLoading ? "—" : `${currency} ${fmt(totalPortfolioValue)}`}
-            sub="Live market prices"
+            sub="Remaining position cost basis"
             tone="info"
             i={0}
             askWhy="Why did my portfolio value change?"
@@ -376,10 +372,10 @@ function MissionControl() {
             askWhy="Why did my realized gains change?"
           />
           <MetricCard
-            label="Unrealized Gains"
-            value={summaryLoading ? "—" : `${currency} ${fmt(summary?.unrealizedGains ?? 0)}`}
-            sub="Live market prices"
-            tone={(summary?.unrealizedGains ?? 0) >= 0 ? "ok" : "bad"}
+            label="Unrealized P&L"
+            value={summaryLoading ? "—" : "Unavailable"}
+            sub="Requires verified current prices"
+            tone="info"
             i={2}
             askWhy="Why did my unrealized gains change?"
           />
