@@ -40,7 +40,7 @@ export async function signInWithGoogle() {
   if (!isLovableHosted()) {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/app/overview` },
     });
     if (error) throw new Error(error.message);
     return data;
