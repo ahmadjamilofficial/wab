@@ -89,7 +89,7 @@ function MetricCard({
   return (
     <motion.div variants={reveal} custom={i} initial="hidden" animate="visible">
       <div
-        className="group relative overflow-hidden rounded-2xl bg-surface p-5 transition-shadow hover:shadow-md"
+        className="group relative overflow-hidden rounded-xl bg-surface p-3.5 transition-shadow hover:shadow-md sm:rounded-2xl sm:p-5"
         style={{ border: "1px solid var(--hairline)" }}
       >
         <p className="text-xs font-medium" style={{ color: "var(--ink-2)" }}>
@@ -183,7 +183,7 @@ function FoundSomethingSection({
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between sm:mb-4">
         <div className="flex items-center gap-2.5">
           <div
             className="flex size-8 items-center justify-center rounded-lg"
@@ -323,11 +323,11 @@ function MissionControl() {
   }
 
   return (
-    <div className="space-y-5 p-3 sm:space-y-6 sm:p-6 max-w-[1600px]">
+    <div className="mx-auto w-full max-w-[1440px] space-y-4 p-3 sm:space-y-5 sm:p-5 lg:space-y-6 lg:p-6">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.75rem" }}>
+          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.45rem, 2.2vw, 1.8rem)" }}>
             Portfolio Overview
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
@@ -351,14 +351,14 @@ function MissionControl() {
       <DailyBriefing />
 
       {/* Key Metrics Grid */}
-      <div className="rounded-2xl bg-surface p-4 sm:p-6" style={{ border: "1px solid var(--hairline)" }}>
+      <div className="rounded-xl bg-surface p-3.5 sm:rounded-2xl sm:p-5 lg:p-6" style={{ border: "1px solid var(--hairline)" }}>
         <div className="mb-4">
           <h2 className="text-sm font-bold">Key Metrics</h2>
           <p className="text-xs" style={{ color: "var(--ink-3)" }}>
             Live portfolio valuation and performance
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
           <MetricCard
             label="Portfolio Value"
             value={summaryLoading ? "—" : `${currency} ${fmt(totalPortfolioValue)}`}
@@ -395,13 +395,13 @@ function MissionControl() {
       </div>
 
       {/* Two-column layout */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-3.5 sm:gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(300px,1fr)]">
         {/* Left column - Main charts and insights */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="min-w-0 space-y-3.5 sm:space-y-5">
           {/* P&L Chart */}
           {pnlData.length > 0 && (
             <div
-              className="rounded-2xl bg-surface p-6"
+              className="rounded-xl bg-surface p-3.5 sm:rounded-2xl sm:p-5"
               style={{ border: "1px solid var(--hairline)" }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -485,7 +485,7 @@ function MissionControl() {
         </div>
 
         {/* Right column - Sidebar widgets */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-3.5 sm:space-y-5">
           {/* Health Score */}
           <div
             className="rounded-2xl bg-surface p-6"
