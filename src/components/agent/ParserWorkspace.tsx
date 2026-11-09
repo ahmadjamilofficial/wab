@@ -793,7 +793,7 @@ function Chat({
               )
             : undefined;
         await sendMessage({
-          text: pendingText || "Analyse the attached document(s).",
+          text: pendingText || "If the attached file is a broker statement or trade confirmation, extract every transaction row with source-grounded ticker, action, quantity, price, fees, withholding tax, trade date, reference, broker, and exchange, then post valid rows to my ledger using insert_transaction. Do not guess missing fields; report any rows you cannot safely post. If it is not a trade statement, analyse it without posting.",
           ...(aiFiles ? { files: dataTransferFiles(aiFiles) } : {}),
         });
       })();
