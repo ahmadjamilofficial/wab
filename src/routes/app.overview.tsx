@@ -229,12 +229,10 @@ function MissionControl() {
   const { data: transactions = [], isLoading: txLoading } = useTransactions(profile?.org_id);
   const { data: flags = [] } = useReconciliationFlags(profile?.org_id);
 
-  // Detect actual currency from transaction exchanges — not from org default
-  const nseCount = transactions.filter((t) => t.exchange === "NSE").length;
-  const psxCount = transactions.length - nseCount;
-  const detectedJurisdiction: "PSX" | "NSE" =
-    transactions.length === 0 ? jurisdiction : nseCount > psxCount ? "NSE" : "PSX";
-  const currency = detectedJurisdiction === "NSE" ? "INR" : "PKR";
+  // Wab uses one workspace-wide base currency: PKR.
+  // Keep tax jurisdiction independent from transaction exchange detection.
+  const detectedJurisdiction: "PSX" = "PSX";
+  const currency = "PKR";
 
   const currentYear = String(new Date().getFullYear());
   const { score, isLoading: scoreLoading } = useHealthScore();
