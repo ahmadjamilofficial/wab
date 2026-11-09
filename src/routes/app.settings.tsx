@@ -337,7 +337,7 @@ function Settings() {
                   onChange={(e) => setDeleteConfirm(e.target.value)}
                   placeholder={`Type "${profile?.org_name ?? ""}" to confirm`}
                   className="mb-8 mt-2 w-full rounded-[10px] border bg-surface px-4 py-3 text-sm outline-none"
-                  style={{ borderColor: "var(--hairline)", maxWidth: 400 }}
+                  style={{ borderColor: "var(--hairline)", maxWidth: 400, marginBottom: "3rem" }}
                 />
                 <Btn
                   variant="ghost"
