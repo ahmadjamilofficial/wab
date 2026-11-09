@@ -15,7 +15,9 @@ export const Route = createFileRoute("/api/market-data")({
           const response = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(ticker) + "?interval=" + interval + "&range=" + range, { headers: { "User-Agent": "Mozilla/5.0" } });
           if (!response.ok) return Response.json({ points: [], error: `Market data provider returned HTTP ${response.status} for ${ticker}. The symbol may not be listed on the selected exchange or the provider may be unavailable.`, provider: "Yahoo Finance", requestedSymbol: symbol, providerSymbol: ticker }, { status: 502 });
           const data = await response.json();
-          const result = data.chart?.result?.[0];\n          const providerError = data.chart?.error;\n          if (!result) return Response.json({ points: [], error: providerError?.description ?? `No market history found for ${ticker}.`, requestedSymbol: symbol, providerSymbol: ticker }, { status: 502 });
+          const result = data.chart?.result?.[0];
+          const providerError = data.chart?.error;
+          if (!result) return Response.json({ points: [], error: providerError?.description ?? `No market history found for ${ticker}.`, requestedSymbol: symbol, providerSymbol: ticker }, { status: 502 });
           const timestamps = result?.timestamp || [];
           const closes = result?.indicators?.quote?.[0]?.close || [];
           const points = timestamps.map((time: number, i: number) => ({ time: time * 1000, price: closes[i] })).filter((p: { time: number; price: number | null }) => typeof p.price === "number" && Number.isFinite(p.price));
