@@ -15,7 +15,7 @@ function AppLayout() {
     // Only redirect once we know for certain there's no session.
     // While loading is true the session is still being resolved — don't redirect yet.
     if (!loading && !session) {
-      navigate({ to: "/signin", replace: true });
+      navigate({ to: "/signin", search: { next: `${window.location.pathname}${window.location.search}` }, replace: true });
     }
   }, [loading, session, navigate]);
 
