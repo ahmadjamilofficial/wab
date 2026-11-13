@@ -41,6 +41,7 @@ import {
   useDailyBriefing,
 } from "@/lib/financial-intelligence-hooks";
 import { DailyBriefing } from "@/components/intelligence/DailyBriefing";
+import { PortfolioRiskSnapshot } from "@/components/portfolio/PortfolioRiskSnapshot";
 import { FinancialHealthScore } from "@/components/intelligence/FinancialHealthScore";
 import { PriorityCard, PriorityCardSkeleton } from "@/components/intelligence/PriorityCard";
 import {
@@ -550,6 +551,12 @@ function MissionControl() {
               </div>
             </div>
           )}
+
+          {/* Portfolio concentration snapshot */}
+          <PortfolioRiskSnapshot
+            positions={summary?.tickerBreakdown ?? []}
+            currency={currency}
+          />
 
           {/* Secondary Metrics */}
           <div
